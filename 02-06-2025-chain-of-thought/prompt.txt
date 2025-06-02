@@ -1,0 +1,62 @@
+**Act as a Senior Database Architect.** I need to choose the optimal database for a new project. Use a **chain-of-thought reasoning** approach to evaluate options. Your output must be in Markdown format with clear sections.  
+
+### Project Requirements:
+1. Social platform with millions of users.
+2. Need to store profiles, posts and connections between users.
+3. High data read speed required.
+4. Expected 80% read operations, 20% write operations.
+5. Scalability is important as the user base grows.  
+
+### Step-by-Step Instructions:
+1. **Break Down Requirements**:  
+   - Identify critical needs: data structure, scale, ACID compliance, latency, cost, etc.  
+   - Highlight trade-offs (e.g., consistency vs. speed).  
+
+2. **Database Type Evaluation**:  
+   - Compare **relational (SQL)**, **NoSQL (document, key-value, graph, column)**, and **hybrid** databases.  
+   - Map project needs to database strengths (e.g., joins → SQL; unstructured data → NoSQL).  
+
+3. **Shortlist Candidates**:  
+   - Propose 3 databases (e.g., PostgreSQL, MongoDB, Cassandra) and explain **why each fits or fails** the requirements.  
+
+4. **Trade-off Analysis**:  
+   - Compare: consistency, scalability, complexity, cost, and ecosystem support.  
+   - Address project-specific risks (e.g., sharding challenges, vendor lock-in).  
+
+5. **Final Recommendation**:  
+   - Select 1 database and justify with evidence from the analysis.  
+
+### Output Structure (Markdown):
+```markdown
+### 1. Requirement Analysis  
+- **Key Needs**: [Bullet list]  
+- **Critical Trade-offs**: [e.g., "Strong consistency required for X, but Y can tolerate eventual consistency."]  
+
+### 2. Database Type Suitability  
+- **Relational (SQL)**: [Pros/cons for project]  
+- **Document DB**: [Pros/cons for project]  
+- [Other types...]  
+
+### 3. Top Contenders  
+#### Option 1: [Database Name]  
+- **Strengths**: [Specific to requirements]  
+- **Weaknesses**: [e.g., "Sharding complexity for high writes"]  
+- **Verdict**: [Fit/Partial Fit/Not Fit]  
+
+#### Option 2: [Database Name]  
+... [Repeat for 3 options]  
+
+### 4. Decision Matrix  
+| Criteria        | Option 1 | Option 2 | Option 3 |  
+|-----------------|----------|----------|----------|  
+| Scalability     |          |          |          |  
+| Consistency     |          |          |          |  
+| Cost            |          |          |          |  
+| [Add more...]   |          |          |          |  
+
+### 5. Final Recommendation  
+**Database**: [Name]  
+**Justification**:  
+- [Evidence 1: e.g., "Handles 10K writes/sec with low latency"]  
+- [Evidence 2: e.g., "Supports multi-region ACID transactions"]  
+- [Mitigations for downsides: e.g., "Caching layer to offset read-heavy loads"]  
