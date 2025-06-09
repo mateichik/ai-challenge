@@ -58,7 +58,10 @@ class Enigma {
   }
   stepRotors() {
     if (this.rotors[2].atNotch()) this.rotors[1].step();
-    if (this.rotors[1].atNotch()) this.rotors[0].step();
+    if (this.rotors[1].atNotch()) {
+      this.rotors[0].step();
+      this.rotors[1].step();  // Middle rotor steps when at its notch (double stepping)
+    }
     this.rotors[2].step();
   }
   encryptChar(c) {
@@ -75,6 +78,7 @@ class Enigma {
       c = this.rotors[i].backward(c);
     }
 
+    c = plugboardSwap(c, this.plugboardPairs);
     return c;
   }
   process(text) {

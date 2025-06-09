@@ -241,7 +241,7 @@ describe('Enigma Machine Tests', () => {
       enigma.stepRotors();
       
       expect(enigma.rotors[0].position).toBe(initialPositions[0] + 1); // Left should step
-      expect(enigma.rotors[1].position).toBe(initialPositions[1]); // Middle doesn't step when it's at notch
+      expect(enigma.rotors[1].position).toBe(initialPositions[1] + 1); // Middle should ALSO step (double stepping)
       expect(enigma.rotors[2].position).toBe((initialPositions[2] + 1) % 26); // Right always steps
     });
 
@@ -370,8 +370,8 @@ describe('Enigma Machine Tests', () => {
       expect(decrypted.length).toBe(original.length);
       expect(encrypted).not.toBe(original);
       
-      // Test that the actual decrypted result matches what the implementation produces
-      expect(decrypted).toBe('TIE QUIDK AROWN FOU JUMPS OVER TTE GBZY COF');
+      // Test that encryption and decryption are properly reversible
+      expect(decrypted).toBe(original);
     });
 
     test('should maintain consistent behavior across multiple encryptions', () => {
