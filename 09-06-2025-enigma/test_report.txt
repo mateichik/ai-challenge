@@ -1,0 +1,73 @@
+npm run test:coverage
+
+> enigma-machine@1.0.0 test:coverage
+> jest --coverage
+
+ PASS  ./enigma.test.js                                                                                                                       
+  Enigma Machine Tests
+    mod function                                                                                                                              
+      ✓ should handle positive numbers correctly (1 ms)                                                                                       
+      ✓ should handle negative numbers correctly (1 ms)                                                                                       
+      ✓ should handle zero correctly                                                                                                          
+      ✓ should handle exact multiples (1 ms)                                                                                                  
+    alphabet constant                                                                                                                         
+      ✓ should be correct alphabet string                                                                                                     
+    ROTORS constant                                                                                                                           
+      ✓ should have 3 rotors with correct properties (1 ms)                                                                                   
+      ✓ should have correct wiring lengths                                                                                                    
+    REFLECTOR constant                                                                                                                        
+      ✓ should have correct length (1 ms)                                                                                                     
+      ✓ should be valid reflector (symmetric) (1 ms)                                                                                          
+    plugboardSwap function                                                                                                                    
+      ✓ should swap characters according to pairs                                                                                             
+      ✓ should return unchanged character if not in pairs                                                                                     
+      ✓ should handle empty pairs array (1 ms)                                                                                                
+      ✓ should handle multiple pairs                                                                                                          
+    Rotor class                                                                                                                               
+      ✓ should initialize with correct properties                                                                                             
+      ✓ should initialize with custom settings                                                                                                
+      ✓ should step correctly                                                                                                                 
+      ✓ should detect notch position correctly                                                                                                
+      ✓ should perform forward substitution                                                                                                   
+      ✓ should perform backward substitution                                                                                                  
+      ✓ should handle different positions in forward substitution                                                                             
+      ✓ should handle ring settings in forward/backward operations                                                                            
+    Enigma class                                                                                                                              
+      ✓ should initialize with correct rotors                                                                                                 
+      ✓ should initialize with custom positions and ring settings (1 ms)                                                                      
+      ✓ should step rotors correctly - basic stepping                                                                                         
+      ✓ should step middle rotor when right rotor is at notch                                                                                 
+      ✓ should step left rotor when middle rotor is at notch                                                                                  
+      ✓ should encrypt single character                                                                                                       
+      ✓ should return non-alphabetic characters unchanged                                                                                     
+      ✓ should be reversible with same settings                                                                                               
+      ✓ should process text correctly (1 ms)                                                                                                  
+      ✓ should handle empty string                                                                                                            
+      ✓ should handle mixed case input                                                                                                        
+      ✓ should work with plugboard pairs                                                                                                      
+      ✓ should advance rotors during encryption                                                                                               
+      ✓ should produce consistent results for same configuration                                                                              
+      ✓ should produce different outputs for different rotor positions                                                                        
+      ✓ should handle different rotor orders (1 ms)                                                                                           
+    Integration tests                                                                                                                         
+      ✓ should encrypt and decrypt longer messages                                                                                            
+      ✓ should maintain consistent behavior across multiple encryptions                                                                       
+      ✓ should handle sequential character encryption (1 ms)                                                                                  
+      ✓ should work with maximum plugboard pairs                                                                                              
+    Edge cases                                                                                                                                
+      ✓ should handle extreme rotor positions                                                                                                 
+      ✓ should handle zero positions and settings                                                                                             
+      ✓ should handle single character input                                                                                                  
+      ✓ should handle numbers and special characters (1 ms)                                                                                   
+                                                                                                                                              
+-----------|---------|----------|---------|---------|-------------------                                                                      
+File       | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                       
+-----------|---------|----------|---------|---------|-------------------
+All files  |   76.27 |    68.75 |   68.42 |   73.07 |                  
+ enigma.js |   76.27 |    68.75 |   68.42 |   73.07 | 90-114,122       
+-----------|---------|----------|---------|---------|-------------------
+Test Suites: 1 passed, 1 total
+Tests:       45 passed, 45 total
+Snapshots:   0 total
+Time:        0.149 s, estimated 1 s
+Ran all test suites.
