@@ -122,6 +122,7 @@ if (require.main === module) {
   promptEnigma();
 }
 
+
 // Export for testing
 module.exports = {
   mod,
