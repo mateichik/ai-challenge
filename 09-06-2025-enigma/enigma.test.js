@@ -297,6 +297,19 @@ describe('Enigma Machine Tests', () => {
       expect(result1).not.toBe(result2);
     });
 
+    test('should be reversible with plugboard pairs - demonstrates plugboard output bug', () => {
+      // This test specifically demonstrates the missing plugboard swap at output
+      const plugboardPairs = [['A', 'B'], ['C', 'D']];
+      const enigma1 = new Enigma([0, 1, 2], [0, 0, 0], [0, 0, 0], plugboardPairs);
+      const enigma2 = new Enigma([0, 1, 2], [0, 0, 0], [0, 0, 0], plugboardPairs);
+      
+      const original = 'HELLO';
+      const encrypted = enigma1.process(original);
+      const decrypted = enigma2.process(encrypted);
+      
+      expect(decrypted).toBe(original);
+    });
+
     test('should advance rotors during encryption', () => {
       const initialPositions = enigma.rotors.map(r => r.position);
       enigma.process('ABC');
@@ -434,6 +447,25 @@ describe('Enigma Machine Tests', () => {
       
       expect(result).toMatch(/[A-Z0-9!@#]+/);
       expect(result.length).toBe(input.length);
+    });
+
+    test('should implement double stepping correctly - middle rotor steps when at notch', () => {
+      // This test demonstrates the double stepping bug
+      // In a real Enigma, when the middle rotor is at its notch:
+      // 1. The leftmost rotor should step (currently working)
+      // 2. The middle rotor should ALSO step (currently broken)
+      
+      const enigma = new Enigma([0, 1, 2], [0, 0, 0], [0, 0, 0], []);
+      
+      // Set middle rotor to notch position (E = position 4 for Rotor II)
+      enigma.rotors[1].position = alphabet.indexOf(ROTORS[1].notch); // 'E' = position 4
+      const initialPositions = enigma.rotors.map(r => r.position);
+      
+      enigma.stepRotors();
+      
+      expect(enigma.rotors[0].position).toBe(initialPositions[0] + 1); // Left should step
+      expect(enigma.rotors[1].position).toBe(initialPositions[1] + 1); // Middle should ALSO step (double stepping)
+      expect(enigma.rotors[2].position).toBe((initialPositions[2] + 1) % 26); // Right always steps
     });
   });
 }); 
