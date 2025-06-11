@@ -1,13 +1,16 @@
 var readline = require('readline');
 
-var boardSize = 10;
-var numShips = 3;
-var shipLength = 3;
+// Game Configuration Constants
+const GameConfig = {
+  BOARD_SIZE: 10,
+  NUM_SHIPS: 3,
+  SHIP_LENGTH: 3
+};
 
 var playerShips = [];
 var cpuShips = [];
-var playerNumShips = numShips;
-var cpuNumShips = numShips;
+var playerNumShips = GameConfig.NUM_SHIPS;
+var cpuNumShips = GameConfig.NUM_SHIPS;
 
 var guesses = [];
 var cpuGuesses = [];
@@ -23,10 +26,10 @@ var rl = readline.createInterface({
 });
 
 function createBoard() {
-  for (var i = 0; i < boardSize; i++) {
+  for (var i = 0; i < GameConfig.BOARD_SIZE; i++) {
     board[i] = [];
     playerBoard[i] = [];
-    for (var j = 0; j < boardSize; j++) {
+    for (var j = 0; j < GameConfig.BOARD_SIZE; j++) {
       board[i][j] = '~';
       playerBoard[i][j] = '~';
     }
@@ -43,15 +46,15 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
     var collision = false;
 
     if (orientation === 'horizontal') {
-      startRow = Math.floor(Math.random() * boardSize);
-      startCol = Math.floor(Math.random() * (boardSize - shipLength + 1));
+      startRow = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
+      startCol = Math.floor(Math.random() * (GameConfig.BOARD_SIZE - GameConfig.SHIP_LENGTH + 1));
     } else {
-      startRow = Math.floor(Math.random() * (boardSize - shipLength + 1));
-      startCol = Math.floor(Math.random() * boardSize);
+      startRow = Math.floor(Math.random() * (GameConfig.BOARD_SIZE - GameConfig.SHIP_LENGTH + 1));
+      startCol = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
     }
 
     var tempLocations = [];
-    for (var i = 0; i < shipLength; i++) {
+    for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
       var checkRow = startRow;
       var checkCol = startCol;
       if (orientation === 'horizontal') {
@@ -62,7 +65,7 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
       var locationStr = String(checkRow) + String(checkCol);
       tempLocations.push(locationStr);
 
-      if (checkRow >= boardSize || checkCol >= boardSize) {
+      if (checkRow >= GameConfig.BOARD_SIZE || checkCol >= GameConfig.BOARD_SIZE) {
         collision = true;
         break;
       }
@@ -75,7 +78,7 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
 
     if (!collision) {
       var newShip = { locations: [], hits: [] };
-      for (var i = 0; i < shipLength; i++) {
+      for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
         var placeRow = startRow;
         var placeCol = startCol;
         if (orientation === 'horizontal') {
@@ -105,18 +108,18 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
 function printBoard() {
   console.log('\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---');
   var header = '  ';
-  for (var h = 0; h < boardSize; h++) header += h + ' ';
+  for (var h = 0; h < GameConfig.BOARD_SIZE; h++) header += h + ' ';
   console.log(header + '     ' + header);
 
-  for (var i = 0; i < boardSize; i++) {
+  for (var i = 0; i < GameConfig.BOARD_SIZE; i++) {
     var rowStr = i + ' ';
 
-    for (var j = 0; j < boardSize; j++) {
+    for (var j = 0; j < GameConfig.BOARD_SIZE; j++) {
       rowStr += board[i][j] + ' ';
     }
     rowStr += '    ' + i + ' ';
 
-    for (var j = 0; j < boardSize; j++) {
+    for (var j = 0; j < GameConfig.BOARD_SIZE; j++) {
       rowStr += playerBoard[i][j] + ' ';
     }
     console.log(rowStr);
@@ -137,13 +140,13 @@ function processPlayerGuess(guess) {
     isNaN(row) ||
     isNaN(col) ||
     row < 0 ||
-    row >= boardSize ||
+    row >= GameConfig.BOARD_SIZE ||
     col < 0 ||
-    col >= boardSize
+    col >= GameConfig.BOARD_SIZE
   ) {
     console.log(
       'Oops, please enter valid row and column numbers between 0 and ' +
-        (boardSize - 1) +
+        (GameConfig.BOARD_SIZE - 1) +
         '.',
     );
     return false;
@@ -190,7 +193,7 @@ function processPlayerGuess(guess) {
 }
 
 function isValidAndNewGuess(row, col, guessList) {
-  if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
+  if (row < 0 || row >= GameConfig.BOARD_SIZE || col < 0 || col >= GameConfig.BOARD_SIZE) {
     return false;
   }
   var guessStr = String(row) + String(col);
@@ -215,8 +218,8 @@ function cpuTurn() {
       }
     } else {
       cpuMode = 'hunt';
-      guessRow = Math.floor(Math.random() * boardSize);
-      guessCol = Math.floor(Math.random() * boardSize);
+      guessRow = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
+      guessCol = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
       guessStr = String(guessRow) + String(guessCol);
 
       if (!isValidAndNewGuess(guessRow, guessCol, cpuGuesses)) {
@@ -278,7 +281,7 @@ function cpuTurn() {
 }
 
 function isSunk(ship) {
-  for (var i = 0; i < shipLength; i++) {
+  for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
     if (ship.hits[i] !== 'hit') {
       return false;
     }
@@ -324,9 +327,9 @@ function gameLoop() {
 
 createBoard();
 
-placeShipsRandomly(playerBoard, playerShips, playerNumShips);
-placeShipsRandomly(board, cpuShips, cpuNumShips);
+placeShipsRandomly(playerBoard, playerShips, GameConfig.NUM_SHIPS);
+placeShipsRandomly(board, cpuShips, GameConfig.NUM_SHIPS);
 
 console.log("\nLet's play Sea Battle!");
-console.log('Try to sink the ' + cpuNumShips + ' enemy ships.');
+console.log('Try to sink the ' + GameConfig.NUM_SHIPS + ' enemy ships.');
 gameLoop();
