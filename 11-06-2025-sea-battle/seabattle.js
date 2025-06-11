@@ -26,9 +26,13 @@ class GameState {
     this.cpuMode = 'hunt';
     this.cpuTargetQueue = [];
     
-    // Board arrays
+    // Board arrays (for backward compatibility)
     this.board = [];
     this.playerBoard = [];
+    
+    // Board objects (new API)
+    this.opponentBoardObject = null;
+    this.playerBoardObject = null;
     
     // Configuration references
     this.boardSize = GameConfig.BOARD_SIZE;
@@ -48,6 +52,8 @@ class GameState {
   getPlayerBoard() { return this.playerBoard; }
   getBoardSize() { return this.boardSize; }
   getShipLength() { return this.shipLength; }
+  getOpponentBoardObject() { return this.opponentBoardObject; }
+  getPlayerBoardObject() { return this.playerBoardObject; }
   
   // Setter methods
   setPlayerShips(ships) { this.playerShips = ships; }
@@ -60,6 +66,8 @@ class GameState {
   setCpuTargetQueue(queue) { this.cpuTargetQueue = queue; }
   setBoard(board) { this.board = board; }
   setPlayerBoard(board) { this.playerBoard = board; }
+  setOpponentBoardObject(boardObj) { this.opponentBoardObject = boardObj; }
+  setPlayerBoardObject(boardObj) { this.playerBoardObject = boardObj; }
   
   // Utility methods
   decrementPlayerShips() { this.playerNumShips--; }
@@ -422,34 +430,10 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips, boardSize, s
   return gameLogic.placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard);
 }
 
-// TESTABLE FUNCTION - accepts board arrays as parameters
+// TESTABLE FUNCTION - accepts Board objects as parameters
 function printBoard(opponentBoard, playerBoard, boardSize) {
-  // Check if we received Board objects or raw arrays
-  if (opponentBoard instanceof Board && playerBoard instanceof Board) {
-    // Use the new Board rendering method
-    console.log(Board.renderSideBySide(opponentBoard, playerBoard));
-  } else {
-    // Fallback to original logic for raw arrays
-    console.log('\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---');
-    let header = '  ';
-    for (let h = 0; h < boardSize; h++) header += h + ' ';
-    console.log(header + '     ' + header);
-
-    for (let i = 0; i < boardSize; i++) {
-      let rowStr = i + ' ';
-
-      for (let j = 0; j < boardSize; j++) {
-        rowStr += opponentBoard[i][j] + ' ';
-      }
-      rowStr += '    ' + i + ' ';
-
-      for (let j = 0; j < boardSize; j++) {
-        rowStr += playerBoard[i][j] + ' ';
-      }
-      console.log(rowStr);
-    }
-    console.log('\n');
-  }
+  // Use the Board rendering method
+  console.log(Board.renderSideBySide(opponentBoard, playerBoard));
 }
 
 // TESTABLE FUNCTION - accepts dependencies as parameters
@@ -556,12 +540,12 @@ function gameLoop(gameState, rl) {
   
   if (gameEndResult.gameOver) {
     console.log('\n' + gameEndResult.message);
-    printBoard(gameState.getBoard(), gameState.getPlayerBoard(), gameState.getBoardSize());
+    printBoard(gameState.getOpponentBoardObject(), gameState.getPlayerBoardObject(), gameState.getBoardSize());
     rl.close();
     return;
   }
 
-  printBoard(gameState.getBoard(), gameState.getPlayerBoard(), gameState.getBoardSize());
+  printBoard(gameState.getOpponentBoardObject(), gameState.getPlayerBoardObject(), gameState.getBoardSize());
   rl.question('Enter your guess (e.g., 00): ', function (answer) {
     const playerGuessResult = processPlayerGuess(
       answer, 
@@ -643,6 +627,8 @@ if (require.main === module) {
   const boards = createBoard(gameState.getBoardSize());
   gameState.setBoard(boards.board);
   gameState.setPlayerBoard(boards.playerBoard);
+  gameState.setOpponentBoardObject(boards.opponentBoardObject);
+  gameState.setPlayerBoardObject(boards.playerBoardObject);
   console.log('Boards created.');
 
   // Place ships randomly

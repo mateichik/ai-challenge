@@ -419,8 +419,8 @@ describe('Non-Functional Requirements Validation', () => {
 
 describe('printBoard Function Tests', () => {
   test('should handle empty boards', () => {
-    const emptyBoard = Array(3).fill().map(() => Array(3).fill('~'));
-    const emptyPlayerBoard = Array(3).fill().map(() => Array(3).fill('~'));
+    const emptyBoard = new Board(3);
+    const emptyPlayerBoard = new Board(3);
     
     expect(() => {
       printBoard(emptyBoard, emptyPlayerBoard, 3);
@@ -430,16 +430,15 @@ describe('printBoard Function Tests', () => {
   });
 
   test('should handle boards with mixed content', () => {
-    const board = [
-      ['~', 'O', '~'],
-      ['X', '~', 'O'],
-      ['~', 'X', '~']
-    ];
-    const playerBoard = [
-      ['S', 'S', 'S'],
-      ['~', '~', '~'],
-      ['O', '~', 'X']
-    ];
+    const board = new Board(3);
+    const playerBoard = new Board(3);
+    
+    // Set some test content
+    board.setCell(1, 0, 'O');
+    board.setCell(0, 1, 'X');
+    playerBoard.setCell(0, 0, 'S');
+    playerBoard.setCell(2, 0, 'O');
+    playerBoard.setCell(2, 1, 'X');
     
     expect(() => {
       printBoard(board, playerBoard, 3);
@@ -448,8 +447,8 @@ describe('printBoard Function Tests', () => {
 
   test('should handle different board sizes', () => {
     [1, 5, 10, 15].forEach(size => {
-      const board = Array(size).fill().map(() => Array(size).fill('~'));
-      const playerBoard = Array(size).fill().map(() => Array(size).fill('~'));
+      const board = new Board(size);
+      const playerBoard = new Board(size);
       
       expect(() => {
         printBoard(board, playerBoard, size);
