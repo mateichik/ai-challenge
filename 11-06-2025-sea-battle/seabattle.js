@@ -313,52 +313,67 @@ function cpuTurn(cpuMode, cpuTargetQueue, cpuGuesses, playerShips, playerBoard, 
   };
 }
 
-// STATEFUL FUNCTION
-function gameLoop() {
-  if (cpuNumShips === 0) {
+// TESTABLE FUNCTION - accepts game state as parameters
+function gameLoop(gameState, rl) {
+  if (gameState.cpuNumShips === 0) {
     console.log('\n*** CONGRATULATIONS! You sunk all enemy battleships! ***');
-    printBoard(board, playerBoard, GameConfig.BOARD_SIZE);
+    printBoard(gameState.board, gameState.playerBoard, gameState.boardSize);
     rl.close();
     return;
   }
-  if (playerNumShips === 0) {
+  if (gameState.playerNumShips === 0) {
     console.log('\n*** GAME OVER! The CPU sunk all your battleships! ***');
-    printBoard(board, playerBoard, GameConfig.BOARD_SIZE);
+    printBoard(gameState.board, gameState.playerBoard, gameState.boardSize);
     rl.close();
     return;
   }
 
-  printBoard(board, playerBoard, GameConfig.BOARD_SIZE);
+  printBoard(gameState.board, gameState.playerBoard, gameState.boardSize);
   rl.question('Enter your guess (e.g., 00): ', function (answer) {
-    const playerGuessResult = processPlayerGuess(answer, GameConfig.BOARD_SIZE, guesses, cpuShips, board, GameConfig.SHIP_LENGTH);
+    const playerGuessResult = processPlayerGuess(
+      answer, 
+      gameState.boardSize, 
+      gameState.guesses, 
+      gameState.cpuShips, 
+      gameState.board, 
+      gameState.shipLength
+    );
 
     if (playerGuessResult.success) {
       if (playerGuessResult.sunk) {
-        cpuNumShips--;
+        gameState.cpuNumShips--;
       }
       
-      if (cpuNumShips === 0) {
-        gameLoop();
+      if (gameState.cpuNumShips === 0) {
+        gameLoop(gameState, rl);
         return;
       }
 
-      const cpuTurnResult = cpuTurn(cpuMode, cpuTargetQueue, cpuGuesses, playerShips, playerBoard, GameConfig.BOARD_SIZE, GameConfig.SHIP_LENGTH);
+      const cpuTurnResult = cpuTurn(
+        gameState.cpuMode, 
+        gameState.cpuTargetQueue, 
+        gameState.cpuGuesses, 
+        gameState.playerShips, 
+        gameState.playerBoard, 
+        gameState.boardSize, 
+        gameState.shipLength
+      );
       
       // Update AI state based on return value
-      cpuMode = cpuTurnResult.newCpuMode;
-      cpuTargetQueue = cpuTurnResult.newCpuTargetQueue;
+      gameState.cpuMode = cpuTurnResult.newCpuMode;
+      gameState.cpuTargetQueue = cpuTurnResult.newCpuTargetQueue;
       
       if (cpuTurnResult.sunk) {
-        playerNumShips--;
+        gameState.playerNumShips--;
       }
 
-      if (playerNumShips === 0) {
-        gameLoop();
+      if (gameState.playerNumShips === 0) {
+        gameLoop(gameState, rl);
         return;
       }
     }
 
-    gameLoop();
+    gameLoop(gameState, rl);
   });
 }
 
@@ -372,4 +387,21 @@ placeShipsRandomly(board, cpuShips, GameConfig.NUM_SHIPS, GameConfig.BOARD_SIZE,
 
 console.log("\nLet's play Sea Battle!");
 console.log('Try to sink the ' + GameConfig.NUM_SHIPS + ' enemy ships.');
-gameLoop();
+
+// Create game state object for testable gameLoop
+const gameState = {
+  cpuNumShips: cpuNumShips,
+  playerNumShips: playerNumShips,
+  board: board,
+  playerBoard: playerBoard,
+  boardSize: GameConfig.BOARD_SIZE,
+  shipLength: GameConfig.SHIP_LENGTH,
+  guesses: guesses,
+  cpuShips: cpuShips,
+  cpuMode: cpuMode,
+  cpuTargetQueue: cpuTargetQueue,
+  cpuGuesses: cpuGuesses,
+  playerShips: playerShips
+};
+
+gameLoop(gameState, rl);
