@@ -57,12 +57,18 @@
   - Replace `var` in function parameters where applicable
 
 ### Step 1.5: Create Testable Function Signatures
-- **Action:** Modify functions to accept dependencies as parameters
-- **Details:**
-  - Update `createBoard()` to accept size parameter
-  - Update `isSunk()` to accept ship and shipLength parameters
-  - Update `processPlayerGuess()` to accept board state as parameters
-  - Keep original functions for backward compatibility temporarily
+- **Action:** Modify existing functions to accept dependencies as parameters instead of relying on global state
+- **Details:** Update ALL functions that depend on global variables to accept them as parameters. Modify the following functions in this specific order:
+  1. **`createBoard()`** → `createBoard(size)` - Accept board size parameter and return board arrays instead of modifying globals
+  2. **`isSunk(ship)`** → `isSunk(ship, shipLength)` - Accept shipLength parameter instead of using GameConfig.SHIP_LENGTH
+  3. **`isValidAndNewGuess(row, col, guessList)`** → `isValidAndNewGuess(row, col, guessList, boardSize)` - Accept boardSize parameter instead of using GameConfig.BOARD_SIZE
+  4. **`placeShipsRandomly(targetBoard, shipsArray, numberOfShips)`** → `placeShipsRandomly(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard)` - Accept all required configuration parameters
+  5. **`processPlayerGuess(guess)`** → `processPlayerGuess(guess, targetShips, targetBoard, guessList, boardSize, shipLength)` - Accept all dependencies (ships, board, guesses) as parameters
+  6. **`printBoard()`** → `printBoard(opponentBoard, playerBoard, boardSize)` - Accept both board arrays and size as parameters
+  7. **`cpuTurn()`** → `cpuTurn(playerShips, playerBoard, cpuGuesses, cpuMode, cpuTargetQueue, boardSize, shipLength)` - Accept all AI state and dependencies as parameters
+  8. **`gameLoop()`** → `gameLoop(gameState, rl, display)` - Accept game state object and UI dependencies as parameters
+- **Important:** Modify function signatures in-place, do not create new functions with different names
+- **Testing Ready:** After this step, all core game logic functions can be unit tested in isolation
 
 ### Step 1.6: Extract Game State Object
 - **Action:** Create `GameState` class to hold current game state
