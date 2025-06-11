@@ -3,6 +3,7 @@ const {
   GameConfig,
   GameState,
   GameLogic,
+  Board,
   isValidAndNewGuess,
   isSunk,
   createBoard,

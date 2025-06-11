@@ -5,6 +5,7 @@ const {
   GameConfig,
   GameState,
   GameLogic,
+  Board,
   isValidAndNewGuess,
   isSunk,
   createBoard,
@@ -87,6 +88,23 @@ describe('createBoard Function', () => {
         expect(result.playerBoard[i][j]).toBe('~');
       }
     }
+  });
+
+  test('should provide Board objects for new API', () => {
+    const result = createBoard(5);
+    
+    // Should provide Board objects
+    expect(result.opponentBoardObject).toBeInstanceOf(Board);
+    expect(result.playerBoardObject).toBeInstanceOf(Board);
+    
+    // Board objects should have correct size
+    expect(result.opponentBoardObject.getSize()).toBe(5);
+    expect(result.playerBoardObject.getSize()).toBe(5);
+    
+    // Should work with Board methods
+    expect(result.opponentBoardObject.getCell(0, 0)).toBe('~');
+    result.playerBoardObject.setCell(2, 2, 'S');
+    expect(result.playerBoardObject.getCell(2, 2)).toBe('S');
   });
 });
 
@@ -254,5 +272,115 @@ describe('Edge Cases from Requirements', () => {
     const end = Date.now();
     
     expect(end - start).toBeLessThan(50);
+  });
+});
+
+describe('Board Class', () => {
+  let board;
+
+  beforeEach(() => {
+    board = new Board(10);
+  });
+
+  test('should initialize with correct size and water cells', () => {
+    expect(board.getSize()).toBe(10);
+    expect(board.getCell(0, 0)).toBe('~');
+    expect(board.getCell(5, 5)).toBe('~');
+    expect(board.getCell(9, 9)).toBe('~');
+  });
+
+  test('should validate coordinates correctly', () => {
+    expect(board.isValidCoordinate(0, 0)).toBe(true);
+    expect(board.isValidCoordinate(5, 5)).toBe(true);
+    expect(board.isValidCoordinate(9, 9)).toBe(true);
+    expect(board.isValidCoordinate(-1, 0)).toBe(false);
+    expect(board.isValidCoordinate(0, -1)).toBe(false);
+    expect(board.isValidCoordinate(10, 0)).toBe(false);
+    expect(board.isValidCoordinate(0, 10)).toBe(false);
+  });
+
+  test('should get and set cell values correctly', () => {
+    board.setCell(5, 5, 'X');
+    expect(board.getCell(5, 5)).toBe('X');
+    
+    board.setCell(0, 0, 'S');
+    expect(board.getCell(0, 0)).toBe('S');
+  });
+
+  test('should throw error for invalid coordinates', () => {
+    expect(() => board.getCell(-1, 0)).toThrow('Invalid coordinates: -1, 0');
+    expect(() => board.setCell(10, 0, 'X')).toThrow('Invalid coordinates: 10, 0');
+  });
+
+  test('should clear board correctly', () => {
+    board.setCell(5, 5, 'X');
+    board.setCell(0, 0, 'S');
+    board.clear();
+    expect(board.getCell(5, 5)).toBe('~');
+    expect(board.getCell(0, 0)).toBe('~');
+  });
+
+  test('should return board array copy', () => {
+    board.setCell(1, 1, 'X');
+    const boardArray = board.getBoardArray();
+    expect(boardArray[1][1]).toBe('X');
+    
+    // Modify the copy - should not affect original
+    boardArray[2][2] = 'O';
+    expect(board.getCell(2, 2)).toBe('~');
+  });
+
+  test('should render board with title', () => {
+    board.setCell(0, 0, 'X');
+    board.setCell(1, 1, 'S');
+    const output = board.render('TEST BOARD', true);
+    
+    expect(output).toContain('--- TEST BOARD ---');
+    expect(output).toContain('X');
+    expect(output).toContain('S');
+  });
+
+  test('should hide ships when showShips is false', () => {
+    board.setCell(1, 1, 'S');
+    const outputHidden = board.render('TEST', false);
+    const outputVisible = board.render('TEST', true);
+    
+    // The hidden output should not show 'S' at the ship position  
+    // but the visible output should show 'S'
+    expect(outputVisible).toContain('S');
+    
+    // Check that in hidden output, position (1,1) shows '~' instead of 'S'
+    const hiddenLines = outputHidden.split('\n');
+    const row1Line = hiddenLines.find(line => line.startsWith('1 '));
+    expect(row1Line).toContain('~ ~'); // Should show water where ship is
+  });
+
+  test('should render two boards side by side', () => {
+    const opponentBoard = new Board(3);
+    const playerBoard = new Board(3);
+    
+    opponentBoard.setCell(0, 0, 'X');
+    playerBoard.setCell(1, 1, 'S');
+    
+    const output = Board.renderSideBySide(opponentBoard, playerBoard);
+    
+    expect(output).toContain('--- OPPONENT BOARD ---');
+    expect(output).toContain('--- YOUR BOARD ---');
+    expect(output).toContain('X');
+    expect(output).toContain('S');
+  });
+
+  test('should work with different board sizes', () => {
+    const smallBoard = new Board(3);
+    const largeBoard = new Board(15);
+    
+    expect(smallBoard.getSize()).toBe(3);
+    expect(largeBoard.getSize()).toBe(15);
+    
+    expect(smallBoard.isValidCoordinate(2, 2)).toBe(true);
+    expect(smallBoard.isValidCoordinate(3, 0)).toBe(false);
+    
+    expect(largeBoard.isValidCoordinate(14, 14)).toBe(true);
+    expect(largeBoard.isValidCoordinate(15, 0)).toBe(false);
   });
 }); 
