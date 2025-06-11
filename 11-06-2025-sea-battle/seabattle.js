@@ -36,9 +36,9 @@ function isValidAndNewGuess(row, col, guessList) {
   return guessList.indexOf(guessStr) === -1;
 }
 
-// PURE FUNCTION
-function isSunk(ship) {
-  for (let i = 0; i < GameConfig.SHIP_LENGTH; i++) {
+// TESTABLE FUNCTION - accepts shipLength parameter
+function isSunk(ship, shipLength) {
+  for (let i = 0; i < shipLength; i++) {
     if (ship.hits[i] !== 'hit') {
       return false;
     }
@@ -201,7 +201,7 @@ function processPlayerGuess(guess) {
       console.log('PLAYER HIT!');
       hit = true;
 
-      if (isSunk(ship)) {
+      if (isSunk(ship, GameConfig.SHIP_LENGTH)) {
         console.log('You sunk an enemy battleship!');
         cpuNumShips--;
       }
@@ -263,7 +263,7 @@ function cpuTurn() {
         console.log('CPU HIT at ' + guessStr + '!');
         hit = true;
 
-        if (isSunk(ship)) {
+        if (isSunk(ship, GameConfig.SHIP_LENGTH)) {
           console.log('CPU sunk your battleship!');
           playerNumShips--;
 
