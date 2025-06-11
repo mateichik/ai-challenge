@@ -46,17 +46,21 @@ function isSunk(ship) {
   return true;
 }
 
-// STATEFUL FUNCTION
-function createBoard() {
-  for (let i = 0; i < GameConfig.BOARD_SIZE; i++) {
-    board[i] = [];
-    playerBoard[i] = [];
-    for (let j = 0; j < GameConfig.BOARD_SIZE; j++) {
-      board[i][j] = '~';
-      playerBoard[i][j] = '~';
+// TESTABLE FUNCTION - accepts size parameter and returns boards
+function createBoard(size) {
+  const newBoard = [];
+  const newPlayerBoard = [];
+  
+  for (let i = 0; i < size; i++) {
+    newBoard[i] = [];
+    newPlayerBoard[i] = [];
+    for (let j = 0; j < size; j++) {
+      newBoard[i][j] = '~';
+      newPlayerBoard[i][j] = '~';
     }
   }
-  console.log('Boards created.');
+  
+  return { board: newBoard, playerBoard: newPlayerBoard };
 }
 
 // STATEFUL FUNCTION
@@ -335,7 +339,10 @@ function gameLoop() {
   });
 }
 
-createBoard();
+const boards = createBoard(GameConfig.BOARD_SIZE);
+board = boards.board;
+playerBoard = boards.playerBoard;
+console.log('Boards created.');
 
 placeShipsRandomly(playerBoard, playerShips, GameConfig.NUM_SHIPS);
 placeShipsRandomly(board, cpuShips, GameConfig.NUM_SHIPS);
