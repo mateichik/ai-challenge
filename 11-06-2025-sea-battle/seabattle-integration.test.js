@@ -2,6 +2,7 @@
 const {
   GameConfig,
   GameState,
+  GameLogic,
   isValidAndNewGuess,
   isSunk,
   createBoard,

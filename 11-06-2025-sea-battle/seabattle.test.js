@@ -4,6 +4,7 @@
 const {
   GameConfig,
   GameState,
+  GameLogic,
   isValidAndNewGuess,
   isSunk,
   createBoard,
@@ -122,6 +123,65 @@ describe('GameState Class', () => {
     gameState.setCpuNumShips(3);
     gameState.setPlayerNumShips(0);
     expect(gameState.hasCpuWon()).toBe(true);
+  });
+});
+
+describe('GameLogic Class', () => {
+  let gameLogic;
+
+  beforeEach(() => {
+    gameLogic = new GameLogic();
+  });
+
+  test('should initialize as stateless class', () => {
+    expect(gameLogic).toBeInstanceOf(GameLogic);
+  });
+
+  test('should place ships without collision', () => {
+    const board = Array(10).fill().map(() => Array(10).fill('~'));
+    const ships = [];
+    
+    gameLogic.placeShips(board, ships, 3, 10, 3, board);
+    
+    expect(ships).toHaveLength(3);
+    ships.forEach(ship => {
+      expect(ship.locations).toHaveLength(3);
+      expect(ship.hits).toHaveLength(3);
+    });
+  });
+
+  test('should process hits correctly', () => {
+    const board = Array(10).fill().map(() => Array(10).fill('~'));
+    const guesses = [];
+    const ships = [{ locations: ['00', '01', '02'], hits: ['', '', ''] }];
+    
+    const result = gameLogic.processHit('00', 10, guesses, ships, board, 3);
+    
+    expect(result.success).toBe(true);
+    expect(result.hit).toBe(true);
+    expect(result.sunk).toBe(false);
+    expect(board[0][0]).toBe('X');
+  });
+
+  test('should check game end conditions', () => {
+    const gameState = new GameState();
+    
+    // Game not over initially
+    let result = gameLogic.checkGameEnd(gameState);
+    expect(result.gameOver).toBe(false);
+    
+    // Player wins
+    gameState.setCpuNumShips(0);
+    result = gameLogic.checkGameEnd(gameState);
+    expect(result.gameOver).toBe(true);
+    expect(result.winner).toBe('Player');
+    
+    // CPU wins
+    gameState.setCpuNumShips(3);
+    gameState.setPlayerNumShips(0);
+    result = gameLogic.checkGameEnd(gameState);
+    expect(result.gameOver).toBe(true);
+    expect(result.winner).toBe('CPU');
   });
 });
 
