@@ -155,11 +155,11 @@ function printBoard() {
   console.log('\n');
 }
 
-// STATEFUL FUNCTION
-function processPlayerGuess(guess) {
+// TESTABLE FUNCTION - accepts dependencies as parameters
+function processPlayerGuess(guess, boardSize, guesses, cpuShips, board, shipLength) {
   if (guess === null || guess.length !== 2) {
     console.log('Oops, input must be exactly two digits (e.g., 00, 34, 98).');
-    return false;
+    return { success: false, hit: false, sunk: false };
   }
 
   const row = parseInt(guess[0]);
@@ -169,27 +169,28 @@ function processPlayerGuess(guess) {
     isNaN(row) ||
     isNaN(col) ||
     row < 0 ||
-    row >= GameConfig.BOARD_SIZE ||
+    row >= boardSize ||
     col < 0 ||
-    col >= GameConfig.BOARD_SIZE
+    col >= boardSize
   ) {
     console.log(
       'Oops, please enter valid row and column numbers between 0 and ' +
-        (GameConfig.BOARD_SIZE - 1) +
+        (boardSize - 1) +
         '.',
     );
-    return false;
+    return { success: false, hit: false, sunk: false };
   }
 
   const formattedGuess = guess;
 
   if (guesses.indexOf(formattedGuess) !== -1) {
     console.log('You already guessed that location!');
-    return false;
+    return { success: false, hit: false, sunk: false };
   }
   guesses.push(formattedGuess);
 
   let hit = false;
+  let sunk = false;
 
   for (let i = 0; i < cpuShips.length; i++) {
     const ship = cpuShips[i];
@@ -201,9 +202,9 @@ function processPlayerGuess(guess) {
       console.log('PLAYER HIT!');
       hit = true;
 
-      if (isSunk(ship, GameConfig.SHIP_LENGTH)) {
+      if (isSunk(ship, shipLength)) {
         console.log('You sunk an enemy battleship!');
-        cpuNumShips--;
+        sunk = true;
       }
       break;
     } else if (index >= 0 && ship.hits[index] === 'hit') {
@@ -218,7 +219,7 @@ function processPlayerGuess(guess) {
     console.log('PLAYER MISS.');
   }
 
-  return true;
+  return { success: true, hit: hit, sunk: sunk };
 }
 
 // STATEFUL FUNCTION
@@ -319,9 +320,13 @@ function gameLoop() {
 
   printBoard();
   rl.question('Enter your guess (e.g., 00): ', function (answer) {
-    const playerGuessed = processPlayerGuess(answer);
+    const playerGuessResult = processPlayerGuess(answer, GameConfig.BOARD_SIZE, guesses, cpuShips, board, GameConfig.SHIP_LENGTH);
 
-    if (playerGuessed) {
+    if (playerGuessResult.success) {
+      if (playerGuessResult.sunk) {
+        cpuNumShips--;
+      }
+      
       if (cpuNumShips === 0) {
         gameLoop();
         return;
