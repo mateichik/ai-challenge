@@ -7,18 +7,81 @@ const GameConfig = {
   SHIP_LENGTH: 3
 };
 
-let playerShips = [];
-let cpuShips = [];
-let playerNumShips = GameConfig.NUM_SHIPS;
-let cpuNumShips = GameConfig.NUM_SHIPS;
-
-let guesses = [];
-let cpuGuesses = [];
-let cpuMode = 'hunt';
-let cpuTargetQueue = [];
-
-let board = [];
-let playerBoard = [];
+// Game State Management Class
+class GameState {
+  constructor() {
+    // Ship arrays
+    this.playerShips = [];
+    this.cpuShips = [];
+    
+    // Ship counts
+    this.playerNumShips = GameConfig.NUM_SHIPS;
+    this.cpuNumShips = GameConfig.NUM_SHIPS;
+    
+    // Guess history
+    this.guesses = [];
+    this.cpuGuesses = [];
+    
+    // AI state
+    this.cpuMode = 'hunt';
+    this.cpuTargetQueue = [];
+    
+    // Board arrays
+    this.board = [];
+    this.playerBoard = [];
+    
+    // Configuration references
+    this.boardSize = GameConfig.BOARD_SIZE;
+    this.shipLength = GameConfig.SHIP_LENGTH;
+  }
+  
+  // Getter methods
+  getPlayerShips() { return this.playerShips; }
+  getCpuShips() { return this.cpuShips; }
+  getPlayerNumShips() { return this.playerNumShips; }
+  getCpuNumShips() { return this.cpuNumShips; }
+  getGuesses() { return this.guesses; }
+  getCpuGuesses() { return this.cpuGuesses; }
+  getCpuMode() { return this.cpuMode; }
+  getCpuTargetQueue() { return this.cpuTargetQueue; }
+  getBoard() { return this.board; }
+  getPlayerBoard() { return this.playerBoard; }
+  getBoardSize() { return this.boardSize; }
+  getShipLength() { return this.shipLength; }
+  
+  // Setter methods
+  setPlayerShips(ships) { this.playerShips = ships; }
+  setCpuShips(ships) { this.cpuShips = ships; }
+  setPlayerNumShips(count) { this.playerNumShips = count; }
+  setCpuNumShips(count) { this.cpuNumShips = count; }
+  setGuesses(guesses) { this.guesses = guesses; }
+  setCpuGuesses(guesses) { this.cpuGuesses = guesses; }
+  setCpuMode(mode) { this.cpuMode = mode; }
+  setCpuTargetQueue(queue) { this.cpuTargetQueue = queue; }
+  setBoard(board) { this.board = board; }
+  setPlayerBoard(board) { this.playerBoard = board; }
+  
+  // Utility methods
+  decrementPlayerShips() { this.playerNumShips--; }
+  decrementCpuShips() { this.cpuNumShips--; }
+  addGuess(guess) { this.guesses.push(guess); }
+  addCpuGuess(guess) { this.cpuGuesses.push(guess); }
+  addPlayerShip(ship) { this.playerShips.push(ship); }
+  addCpuShip(ship) { this.cpuShips.push(ship); }
+  
+  // Game state inquiry methods
+  isGameOver() {
+    return this.playerNumShips === 0 || this.cpuNumShips === 0;
+  }
+  
+  hasPlayerWon() {
+    return this.cpuNumShips === 0;
+  }
+  
+  hasCpuWon() {
+    return this.playerNumShips === 0;
+  }
+}
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -315,59 +378,59 @@ function cpuTurn(cpuMode, cpuTargetQueue, cpuGuesses, playerShips, playerBoard, 
 
 // TESTABLE FUNCTION - accepts game state as parameters
 function gameLoop(gameState, rl) {
-  if (gameState.cpuNumShips === 0) {
+  if (gameState.hasPlayerWon()) {
     console.log('\n*** CONGRATULATIONS! You sunk all enemy battleships! ***');
-    printBoard(gameState.board, gameState.playerBoard, gameState.boardSize);
+    printBoard(gameState.getBoard(), gameState.getPlayerBoard(), gameState.getBoardSize());
     rl.close();
     return;
   }
-  if (gameState.playerNumShips === 0) {
+  if (gameState.hasCpuWon()) {
     console.log('\n*** GAME OVER! The CPU sunk all your battleships! ***');
-    printBoard(gameState.board, gameState.playerBoard, gameState.boardSize);
+    printBoard(gameState.getBoard(), gameState.getPlayerBoard(), gameState.getBoardSize());
     rl.close();
     return;
   }
 
-  printBoard(gameState.board, gameState.playerBoard, gameState.boardSize);
+  printBoard(gameState.getBoard(), gameState.getPlayerBoard(), gameState.getBoardSize());
   rl.question('Enter your guess (e.g., 00): ', function (answer) {
     const playerGuessResult = processPlayerGuess(
       answer, 
-      gameState.boardSize, 
-      gameState.guesses, 
-      gameState.cpuShips, 
-      gameState.board, 
-      gameState.shipLength
+      gameState.getBoardSize(), 
+      gameState.getGuesses(), 
+      gameState.getCpuShips(), 
+      gameState.getBoard(), 
+      gameState.getShipLength()
     );
 
     if (playerGuessResult.success) {
       if (playerGuessResult.sunk) {
-        gameState.cpuNumShips--;
+        gameState.decrementCpuShips();
       }
       
-      if (gameState.cpuNumShips === 0) {
+      if (gameState.hasPlayerWon()) {
         gameLoop(gameState, rl);
         return;
       }
 
       const cpuTurnResult = cpuTurn(
-        gameState.cpuMode, 
-        gameState.cpuTargetQueue, 
-        gameState.cpuGuesses, 
-        gameState.playerShips, 
-        gameState.playerBoard, 
-        gameState.boardSize, 
-        gameState.shipLength
+        gameState.getCpuMode(), 
+        gameState.getCpuTargetQueue(), 
+        gameState.getCpuGuesses(), 
+        gameState.getPlayerShips(), 
+        gameState.getPlayerBoard(), 
+        gameState.getBoardSize(), 
+        gameState.getShipLength()
       );
       
       // Update AI state based on return value
-      gameState.cpuMode = cpuTurnResult.newCpuMode;
-      gameState.cpuTargetQueue = cpuTurnResult.newCpuTargetQueue;
+      gameState.setCpuMode(cpuTurnResult.newCpuMode);
+      gameState.setCpuTargetQueue(cpuTurnResult.newCpuTargetQueue);
       
       if (cpuTurnResult.sunk) {
-        gameState.playerNumShips--;
+        gameState.decrementPlayerShips();
       }
 
-      if (gameState.playerNumShips === 0) {
+      if (gameState.hasCpuWon()) {
         gameLoop(gameState, rl);
         return;
       }
@@ -377,31 +440,35 @@ function gameLoop(gameState, rl) {
   });
 }
 
-const boards = createBoard(GameConfig.BOARD_SIZE);
-board = boards.board;
-playerBoard = boards.playerBoard;
+// Initialize game state
+const gameState = new GameState();
+
+// Create boards
+const boards = createBoard(gameState.getBoardSize());
+gameState.setBoard(boards.board);
+gameState.setPlayerBoard(boards.playerBoard);
 console.log('Boards created.');
 
-placeShipsRandomly(playerBoard, playerShips, GameConfig.NUM_SHIPS, GameConfig.BOARD_SIZE, GameConfig.SHIP_LENGTH, playerBoard);
-placeShipsRandomly(board, cpuShips, GameConfig.NUM_SHIPS, GameConfig.BOARD_SIZE, GameConfig.SHIP_LENGTH, playerBoard);
+// Place ships randomly
+placeShipsRandomly(
+  gameState.getPlayerBoard(), 
+  gameState.getPlayerShips(), 
+  GameConfig.NUM_SHIPS, 
+  gameState.getBoardSize(), 
+  gameState.getShipLength(), 
+  gameState.getPlayerBoard()
+);
+
+placeShipsRandomly(
+  gameState.getBoard(), 
+  gameState.getCpuShips(), 
+  GameConfig.NUM_SHIPS, 
+  gameState.getBoardSize(), 
+  gameState.getShipLength(), 
+  gameState.getPlayerBoard()
+);
 
 console.log("\nLet's play Sea Battle!");
 console.log('Try to sink the ' + GameConfig.NUM_SHIPS + ' enemy ships.');
-
-// Create game state object for testable gameLoop
-const gameState = {
-  cpuNumShips: cpuNumShips,
-  playerNumShips: playerNumShips,
-  board: board,
-  playerBoard: playerBoard,
-  boardSize: GameConfig.BOARD_SIZE,
-  shipLength: GameConfig.SHIP_LENGTH,
-  guesses: guesses,
-  cpuShips: cpuShips,
-  cpuMode: cpuMode,
-  cpuTargetQueue: cpuTargetQueue,
-  cpuGuesses: cpuGuesses,
-  playerShips: playerShips
-};
 
 gameLoop(gameState, rl);
