@@ -25,6 +25,27 @@ var rl = readline.createInterface({
   output: process.stdout,
 });
 
+// === UTILITY FUNCTIONS ===
+
+// PURE FUNCTION
+function isValidAndNewGuess(row, col, guessList) {
+  if (row < 0 || row >= GameConfig.BOARD_SIZE || col < 0 || col >= GameConfig.BOARD_SIZE) {
+    return false;
+  }
+  var guessStr = String(row) + String(col);
+  return guessList.indexOf(guessStr) === -1;
+}
+
+// PURE FUNCTION
+function isSunk(ship) {
+  for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
+    if (ship.hits[i] !== 'hit') {
+      return false;
+    }
+  }
+  return true;
+}
+
 // STATEFUL FUNCTION
 function createBoard() {
   for (var i = 0; i < GameConfig.BOARD_SIZE; i++) {
@@ -196,15 +217,6 @@ function processPlayerGuess(guess) {
   return true;
 }
 
-// PURE FUNCTION
-function isValidAndNewGuess(row, col, guessList) {
-  if (row < 0 || row >= GameConfig.BOARD_SIZE || col < 0 || col >= GameConfig.BOARD_SIZE) {
-    return false;
-  }
-  var guessStr = String(row) + String(col);
-  return guessList.indexOf(guessStr) === -1;
-}
-
 // STATEFUL FUNCTION
 function cpuTurn() {
   console.log("\n--- CPU's Turn ---");
@@ -284,16 +296,6 @@ function cpuTurn() {
       }
     }
   }
-}
-
-// PURE FUNCTION
-function isSunk(ship) {
-  for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
-    if (ship.hits[i] !== 'hit') {
-      return false;
-    }
-  }
-  return true;
 }
 
 // STATEFUL FUNCTION
