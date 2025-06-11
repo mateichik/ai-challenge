@@ -132,22 +132,22 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips, boardSize, s
   );
 }
 
-// STATEFUL FUNCTION
-function printBoard() {
+// TESTABLE FUNCTION - accepts board arrays as parameters
+function printBoard(opponentBoard, playerBoard, boardSize) {
   console.log('\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---');
   let header = '  ';
-  for (let h = 0; h < GameConfig.BOARD_SIZE; h++) header += h + ' ';
+  for (let h = 0; h < boardSize; h++) header += h + ' ';
   console.log(header + '     ' + header);
 
-  for (let i = 0; i < GameConfig.BOARD_SIZE; i++) {
+  for (let i = 0; i < boardSize; i++) {
     let rowStr = i + ' ';
 
-    for (let j = 0; j < GameConfig.BOARD_SIZE; j++) {
-      rowStr += board[i][j] + ' ';
+    for (let j = 0; j < boardSize; j++) {
+      rowStr += opponentBoard[i][j] + ' ';
     }
     rowStr += '    ' + i + ' ';
 
-    for (let j = 0; j < GameConfig.BOARD_SIZE; j++) {
+    for (let j = 0; j < boardSize; j++) {
       rowStr += playerBoard[i][j] + ' ';
     }
     console.log(rowStr);
@@ -307,18 +307,18 @@ function cpuTurn() {
 function gameLoop() {
   if (cpuNumShips === 0) {
     console.log('\n*** CONGRATULATIONS! You sunk all enemy battleships! ***');
-    printBoard();
+    printBoard(board, playerBoard, GameConfig.BOARD_SIZE);
     rl.close();
     return;
   }
   if (playerNumShips === 0) {
     console.log('\n*** GAME OVER! The CPU sunk all your battleships! ***');
-    printBoard();
+    printBoard(board, playerBoard, GameConfig.BOARD_SIZE);
     rl.close();
     return;
   }
 
-  printBoard();
+  printBoard(board, playerBoard, GameConfig.BOARD_SIZE);
   rl.question('Enter your guess (e.g., 00): ', function (answer) {
     const playerGuessResult = processPlayerGuess(answer, GameConfig.BOARD_SIZE, guesses, cpuShips, board, GameConfig.SHIP_LENGTH);
 
