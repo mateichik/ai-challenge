@@ -25,6 +25,7 @@ var rl = readline.createInterface({
   output: process.stdout,
 });
 
+// STATEFUL FUNCTION
 function createBoard() {
   for (var i = 0; i < GameConfig.BOARD_SIZE; i++) {
     board[i] = [];
@@ -37,6 +38,7 @@ function createBoard() {
   console.log('Boards created.');
 }
 
+// STATEFUL FUNCTION
 function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
   var placedShips = 0;
   while (placedShips < numberOfShips) {
@@ -105,6 +107,7 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
   );
 }
 
+// STATEFUL FUNCTION
 function printBoard() {
   console.log('\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---');
   var header = '  ';
@@ -127,6 +130,7 @@ function printBoard() {
   console.log('\n');
 }
 
+// STATEFUL FUNCTION
 function processPlayerGuess(guess) {
   if (guess === null || guess.length !== 2) {
     console.log('Oops, input must be exactly two digits (e.g., 00, 34, 98).');
@@ -192,6 +196,7 @@ function processPlayerGuess(guess) {
   return true;
 }
 
+// PURE FUNCTION
 function isValidAndNewGuess(row, col, guessList) {
   if (row < 0 || row >= GameConfig.BOARD_SIZE || col < 0 || col >= GameConfig.BOARD_SIZE) {
     return false;
@@ -200,6 +205,7 @@ function isValidAndNewGuess(row, col, guessList) {
   return guessList.indexOf(guessStr) === -1;
 }
 
+// STATEFUL FUNCTION
 function cpuTurn() {
   console.log("\n--- CPU's Turn ---");
   var guessRow, guessCol, guessStr;
@@ -280,6 +286,7 @@ function cpuTurn() {
   }
 }
 
+// PURE FUNCTION
 function isSunk(ship) {
   for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
     if (ship.hits[i] !== 'hit') {
@@ -289,6 +296,7 @@ function isSunk(ship) {
   return true;
 }
 
+// STATEFUL FUNCTION
 function gameLoop() {
   if (cpuNumShips === 0) {
     console.log('\n*** CONGRATULATIONS! You sunk all enemy battleships! ***');
