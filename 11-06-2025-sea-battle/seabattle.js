@@ -27,9 +27,9 @@ const rl = readline.createInterface({
 
 // === UTILITY FUNCTIONS ===
 
-// PURE FUNCTION
-function isValidAndNewGuess(row, col, guessList) {
-  if (row < 0 || row >= GameConfig.BOARD_SIZE || col < 0 || col >= GameConfig.BOARD_SIZE) {
+// TESTABLE FUNCTION - accepts boardSize parameter
+function isValidAndNewGuess(row, col, guessList, boardSize) {
+  if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
     return false;
   }
   const guessStr = String(row) + String(col);
@@ -244,7 +244,7 @@ function cpuTurn() {
       guessCol = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
       guessStr = String(guessRow) + String(guessCol);
 
-      if (!isValidAndNewGuess(guessRow, guessCol, cpuGuesses)) {
+      if (!isValidAndNewGuess(guessRow, guessCol, cpuGuesses, GameConfig.BOARD_SIZE)) {
         continue;
       }
     }
@@ -278,7 +278,7 @@ function cpuTurn() {
             { r: guessRow, c: guessCol + 1 },
           ];
           for (const adj of adjacent) {
-            if (isValidAndNewGuess(adj.r, adj.c, cpuGuesses)) {
+            if (isValidAndNewGuess(adj.r, adj.c, cpuGuesses, GameConfig.BOARD_SIZE)) {
               const adjStr = String(adj.r) + String(adj.c);
 
               if (cpuTargetQueue.indexOf(adjStr) === -1) {
