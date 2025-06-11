@@ -83,11 +83,6 @@ class GameState {
   }
 }
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
 // === UTILITY FUNCTIONS ===
 
 // TESTABLE FUNCTION - accepts boardSize parameter
@@ -220,7 +215,7 @@ function printBoard(opponentBoard, playerBoard, boardSize) {
 
 // TESTABLE FUNCTION - accepts dependencies as parameters
 function processPlayerGuess(guess, boardSize, guesses, cpuShips, board, shipLength) {
-  if (guess === null || guess.length !== 2) {
+  if (guess === null || guess === undefined || typeof guess !== 'string' || guess.length !== 2) {
     console.log('Oops, input must be exactly two digits (e.g., 00, 34, 98).');
     return { success: false, hit: false, sunk: false };
   }
@@ -440,35 +435,58 @@ function gameLoop(gameState, rl) {
   });
 }
 
-// Initialize game state
-const gameState = new GameState();
+// Export functions and classes for testing
+module.exports = {
+  GameConfig,
+  GameState,
+  isValidAndNewGuess,
+  isSunk,
+  createBoard,
+  placeShipsRandomly,
+  processPlayerGuess,
+  cpuTurn,
+  printBoard,
+  gameLoop
+};
 
-// Create boards
-const boards = createBoard(gameState.getBoardSize());
-gameState.setBoard(boards.board);
-gameState.setPlayerBoard(boards.playerBoard);
-console.log('Boards created.');
+// Only run the game if this file is executed directly (not imported for testing)
+if (require.main === module) {
+  // Create readline interface for game interaction
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 
-// Place ships randomly
-placeShipsRandomly(
-  gameState.getPlayerBoard(), 
-  gameState.getPlayerShips(), 
-  GameConfig.NUM_SHIPS, 
-  gameState.getBoardSize(), 
-  gameState.getShipLength(), 
-  gameState.getPlayerBoard()
-);
+  // Initialize game state
+  const gameState = new GameState();
 
-placeShipsRandomly(
-  gameState.getBoard(), 
-  gameState.getCpuShips(), 
-  GameConfig.NUM_SHIPS, 
-  gameState.getBoardSize(), 
-  gameState.getShipLength(), 
-  gameState.getPlayerBoard()
-);
+  // Create boards
+  const boards = createBoard(gameState.getBoardSize());
+  gameState.setBoard(boards.board);
+  gameState.setPlayerBoard(boards.playerBoard);
+  console.log('Boards created.');
 
-console.log("\nLet's play Sea Battle!");
-console.log('Try to sink the ' + GameConfig.NUM_SHIPS + ' enemy ships.');
+  // Place ships randomly
+  placeShipsRandomly(
+    gameState.getPlayerBoard(), 
+    gameState.getPlayerShips(), 
+    GameConfig.NUM_SHIPS, 
+    gameState.getBoardSize(), 
+    gameState.getShipLength(), 
+    gameState.getPlayerBoard()
+  );
 
-gameLoop(gameState, rl);
+  placeShipsRandomly(
+    gameState.getBoard(), 
+    gameState.getCpuShips(), 
+    GameConfig.NUM_SHIPS, 
+    gameState.getBoardSize(), 
+    gameState.getShipLength(), 
+    gameState.getPlayerBoard()
+  );
+
+  console.log("\nLet's play Sea Battle!");
+  console.log('Try to sink the ' + GameConfig.NUM_SHIPS + ' enemy ships.');
+  
+  gameLoop(gameState, rl);
+}

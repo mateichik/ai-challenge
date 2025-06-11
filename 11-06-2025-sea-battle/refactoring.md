@@ -79,12 +79,15 @@
   - Initialize state in constructor
 
 ### Step 1.7: Write Initial Unit Tests
-- **Action:** Create comprehensive unit test suite for pure functions
+- **Action:** Create comprehensive unit test suite for pure functions using Jest framework
 - **Details:**
+  - **Framework:** Use Jest as the testing framework with package.json setup
   - Test all utility functions (coordinate validation, etc.)
   - Test pure game logic functions (ship sinking, hit detection)
+  - Test GameState class methods and state management
   - Test edge cases identified in requirements.md
   - Ensure 100% coverage of testable functions
+  - Create separate test files for different components
 
 ---
 
