@@ -1,4 +1,4 @@
-var readline = require('readline');
+const readline = require('readline');
 
 // Game Configuration Constants
 const GameConfig = {
@@ -7,20 +7,20 @@ const GameConfig = {
   SHIP_LENGTH: 3
 };
 
-var playerShips = [];
-var cpuShips = [];
-var playerNumShips = GameConfig.NUM_SHIPS;
-var cpuNumShips = GameConfig.NUM_SHIPS;
+let playerShips = [];
+let cpuShips = [];
+let playerNumShips = GameConfig.NUM_SHIPS;
+let cpuNumShips = GameConfig.NUM_SHIPS;
 
-var guesses = [];
-var cpuGuesses = [];
-var cpuMode = 'hunt';
-var cpuTargetQueue = [];
+let guesses = [];
+let cpuGuesses = [];
+let cpuMode = 'hunt';
+let cpuTargetQueue = [];
 
-var board = [];
-var playerBoard = [];
+let board = [];
+let playerBoard = [];
 
-var rl = readline.createInterface({
+const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
@@ -32,13 +32,13 @@ function isValidAndNewGuess(row, col, guessList) {
   if (row < 0 || row >= GameConfig.BOARD_SIZE || col < 0 || col >= GameConfig.BOARD_SIZE) {
     return false;
   }
-  var guessStr = String(row) + String(col);
+  const guessStr = String(row) + String(col);
   return guessList.indexOf(guessStr) === -1;
 }
 
 // PURE FUNCTION
 function isSunk(ship) {
-  for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
+  for (let i = 0; i < GameConfig.SHIP_LENGTH; i++) {
     if (ship.hits[i] !== 'hit') {
       return false;
     }
@@ -48,10 +48,10 @@ function isSunk(ship) {
 
 // STATEFUL FUNCTION
 function createBoard() {
-  for (var i = 0; i < GameConfig.BOARD_SIZE; i++) {
+  for (let i = 0; i < GameConfig.BOARD_SIZE; i++) {
     board[i] = [];
     playerBoard[i] = [];
-    for (var j = 0; j < GameConfig.BOARD_SIZE; j++) {
+    for (let j = 0; j < GameConfig.BOARD_SIZE; j++) {
       board[i][j] = '~';
       playerBoard[i][j] = '~';
     }
@@ -61,12 +61,12 @@ function createBoard() {
 
 // STATEFUL FUNCTION
 function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
-  var placedShips = 0;
+  let placedShips = 0;
   while (placedShips < numberOfShips) {
-    var orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
-    var startRow, startCol;
-    var shipLocations = [];
-    var collision = false;
+    const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+    let startRow, startCol;
+    let shipLocations = [];
+    let collision = false;
 
     if (orientation === 'horizontal') {
       startRow = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
@@ -76,16 +76,16 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
       startCol = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
     }
 
-    var tempLocations = [];
-    for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
-      var checkRow = startRow;
-      var checkCol = startCol;
+    let tempLocations = [];
+    for (let i = 0; i < GameConfig.SHIP_LENGTH; i++) {
+      let checkRow = startRow;
+      let checkCol = startCol;
       if (orientation === 'horizontal') {
         checkCol += i;
       } else {
         checkRow += i;
       }
-      var locationStr = String(checkRow) + String(checkCol);
+      const locationStr = String(checkRow) + String(checkCol);
       tempLocations.push(locationStr);
 
       if (checkRow >= GameConfig.BOARD_SIZE || checkCol >= GameConfig.BOARD_SIZE) {
@@ -100,16 +100,16 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
     }
 
     if (!collision) {
-      var newShip = { locations: [], hits: [] };
-      for (var i = 0; i < GameConfig.SHIP_LENGTH; i++) {
-        var placeRow = startRow;
-        var placeCol = startCol;
+      const newShip = { locations: [], hits: [] };
+      for (let i = 0; i < GameConfig.SHIP_LENGTH; i++) {
+        let placeRow = startRow;
+        let placeCol = startCol;
         if (orientation === 'horizontal') {
           placeCol += i;
         } else {
           placeRow += i;
         }
-        var locationStr = String(placeRow) + String(placeCol);
+        const locationStr = String(placeRow) + String(placeCol);
         newShip.locations.push(locationStr);
         newShip.hits.push('');
 
@@ -131,19 +131,19 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
 // STATEFUL FUNCTION
 function printBoard() {
   console.log('\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---');
-  var header = '  ';
-  for (var h = 0; h < GameConfig.BOARD_SIZE; h++) header += h + ' ';
+  let header = '  ';
+  for (let h = 0; h < GameConfig.BOARD_SIZE; h++) header += h + ' ';
   console.log(header + '     ' + header);
 
-  for (var i = 0; i < GameConfig.BOARD_SIZE; i++) {
-    var rowStr = i + ' ';
+  for (let i = 0; i < GameConfig.BOARD_SIZE; i++) {
+    let rowStr = i + ' ';
 
-    for (var j = 0; j < GameConfig.BOARD_SIZE; j++) {
+    for (let j = 0; j < GameConfig.BOARD_SIZE; j++) {
       rowStr += board[i][j] + ' ';
     }
     rowStr += '    ' + i + ' ';
 
-    for (var j = 0; j < GameConfig.BOARD_SIZE; j++) {
+    for (let j = 0; j < GameConfig.BOARD_SIZE; j++) {
       rowStr += playerBoard[i][j] + ' ';
     }
     console.log(rowStr);
@@ -158,8 +158,8 @@ function processPlayerGuess(guess) {
     return false;
   }
 
-  var row = parseInt(guess[0]);
-  var col = parseInt(guess[1]);
+  const row = parseInt(guess[0]);
+  const col = parseInt(guess[1]);
 
   if (
     isNaN(row) ||
@@ -177,7 +177,7 @@ function processPlayerGuess(guess) {
     return false;
   }
 
-  var formattedGuess = guess;
+  const formattedGuess = guess;
 
   if (guesses.indexOf(formattedGuess) !== -1) {
     console.log('You already guessed that location!');
@@ -185,11 +185,11 @@ function processPlayerGuess(guess) {
   }
   guesses.push(formattedGuess);
 
-  var hit = false;
+  let hit = false;
 
-  for (var i = 0; i < cpuShips.length; i++) {
-    var ship = cpuShips[i];
-    var index = ship.locations.indexOf(formattedGuess);
+  for (let i = 0; i < cpuShips.length; i++) {
+    const ship = cpuShips[i];
+    const index = ship.locations.indexOf(formattedGuess);
 
     if (index >= 0 && ship.hits[index] !== 'hit') {
       ship.hits[index] = 'hit';
@@ -220,8 +220,8 @@ function processPlayerGuess(guess) {
 // STATEFUL FUNCTION
 function cpuTurn() {
   console.log("\n--- CPU's Turn ---");
-  var guessRow, guessCol, guessStr;
-  var madeValidGuess = false;
+  let guessRow, guessCol, guessStr;
+  let madeValidGuess = false;
 
   while (!madeValidGuess) {
     if (cpuMode === 'target' && cpuTargetQueue.length > 0) {
@@ -248,10 +248,10 @@ function cpuTurn() {
     madeValidGuess = true;
     cpuGuesses.push(guessStr);
 
-    var hit = false;
-    for (var i = 0; i < playerShips.length; i++) {
-      var ship = playerShips[i];
-      var index = ship.locations.indexOf(guessStr);
+    let hit = false;
+    for (let i = 0; i < playerShips.length; i++) {
+      const ship = playerShips[i];
+      const index = ship.locations.indexOf(guessStr);
 
       if (index >= 0) {
         ship.hits[index] = 'hit';
@@ -267,15 +267,15 @@ function cpuTurn() {
           cpuTargetQueue = [];
         } else {
           cpuMode = 'target';
-          var adjacent = [
+          const adjacent = [
             { r: guessRow - 1, c: guessCol },
             { r: guessRow + 1, c: guessCol },
             { r: guessRow, c: guessCol - 1 },
             { r: guessRow, c: guessCol + 1 },
           ];
-          for (var adj of adjacent) {
+          for (const adj of adjacent) {
             if (isValidAndNewGuess(adj.r, adj.c, cpuGuesses)) {
-              var adjStr = String(adj.r) + String(adj.c);
+              const adjStr = String(adj.r) + String(adj.c);
 
               if (cpuTargetQueue.indexOf(adjStr) === -1) {
                 cpuTargetQueue.push(adjStr);
@@ -315,7 +315,7 @@ function gameLoop() {
 
   printBoard();
   rl.question('Enter your guess (e.g., 00): ', function (answer) {
-    var playerGuessed = processPlayerGuess(answer);
+    const playerGuessed = processPlayerGuess(answer);
 
     if (playerGuessed) {
       if (cpuNumShips === 0) {
