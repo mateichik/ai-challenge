@@ -80,17 +80,16 @@ describe('isSunk Function', () => {
 describe('createBoard Function', () => {
   test('should create correct board dimensions', () => {
     const result = createBoard(10);
-    expect(result.board).toHaveLength(10);
-    expect(result.playerBoard).toHaveLength(10);
-    expect(result.board[0]).toHaveLength(10);
+    expect(result.opponentBoardObject.getSize()).toBe(10);
+    expect(result.playerBoardObject.getSize()).toBe(10);
   });
 
   test('should initialize cells as water', () => {
     const result = createBoard(3);
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
-        expect(result.board[i][j]).toBe('~');
-        expect(result.playerBoard[i][j]).toBe('~');
+        expect(result.opponentBoardObject.getCell(i, j)).toBe('~');
+        expect(result.playerBoardObject.getCell(i, j)).toBe('~');
       }
     }
   });
@@ -121,30 +120,30 @@ describe('GameState Class', () => {
   });
 
   test('should initialize with correct defaults', () => {
-    expect(gameState.getPlayerNumShips()).toBe(3);
-    expect(gameState.getCpuNumShips()).toBe(3);
+    expect(gameState.getPlayer().getNumShips()).toBe(3);
+    expect(gameState.getCpu().getNumShips()).toBe(3);
     expect(gameState.getBoardSize()).toBe(10);
     expect(gameState.getShipLength()).toBe(3);
     expect(gameState.getCpuMode()).toBe('hunt');
   });
 
   test('should handle ship count changes', () => {
-    gameState.decrementPlayerShips();
-    expect(gameState.getPlayerNumShips()).toBe(2);
+    gameState.getPlayer().decrementNumShips();
+    expect(gameState.getPlayer().getNumShips()).toBe(2);
     
-    gameState.decrementCpuShips();
-    expect(gameState.getCpuNumShips()).toBe(2);
+    gameState.getCpu().decrementNumShips();
+    expect(gameState.getCpu().getNumShips()).toBe(2);
   });
 
   test('should track game end conditions', () => {
     expect(gameState.isGameOver()).toBe(false);
     
-    gameState.setCpuNumShips(0);
+    gameState.getCpu().setNumShips(0);
     expect(gameState.hasPlayerWon()).toBe(true);
     expect(gameState.isGameOver()).toBe(true);
     
-    gameState.setCpuNumShips(3);
-    gameState.setPlayerNumShips(0);
+    gameState.getCpu().setNumShips(3);
+    gameState.getPlayer().setNumShips(0);
     expect(gameState.hasCpuWon()).toBe(true);
   });
 });
@@ -157,9 +156,9 @@ describe('GameLogic Class', () => {
 
   beforeEach(() => {
     gameLogic = new GameLogic();
-    board = Array(10).fill().map(() => Array(10).fill('~'));
+    board = new Board(10);
     ships = [];
-    playerBoard = Array(10).fill().map(() => Array(10).fill('~'));
+    playerBoard = new Board(10);
   });
 
   test('should place ships without collision', () => {
@@ -178,7 +177,7 @@ describe('GameLogic Class', () => {
     const result = gameLogic.processHit('00', 10, [], ships, board, 3);
     expect(result.success).toBe(true);
     expect(result.hit).toBe(true);
-    expect(board[0][0]).toBe('X');
+    expect(board.getCell(0, 0)).toBe('X');
   });
 
   test('should check game end conditions', () => {
@@ -189,14 +188,14 @@ describe('GameLogic Class', () => {
     expect(result.gameOver).toBe(false);
     
     // Player wins
-    gameState.setCpuNumShips(0);
+    gameState.getCpu().setNumShips(0);
     result = gameLogic.checkGameEnd(gameState);
     expect(result.gameOver).toBe(true);
     expect(result.winner).toBe('Player');
     
     // CPU wins
-    gameState.setCpuNumShips(3);
-    gameState.setPlayerNumShips(0);
+    gameState.getCpu().setNumShips(3);
+    gameState.getPlayer().setNumShips(0);
     result = gameLogic.checkGameEnd(gameState);
     expect(result.gameOver).toBe(true);
     expect(result.winner).toBe('CPU');
@@ -207,7 +206,7 @@ describe('processPlayerGuess Function', () => {
   let mockBoard, mockGuesses, mockCpuShips;
 
   beforeEach(() => {
-    mockBoard = Array(10).fill().map(() => Array(10).fill('~'));
+    mockBoard = new Board(10);
     mockGuesses = [];
     mockCpuShips = [
       new Ship(['00', '01', '02'])
@@ -226,14 +225,14 @@ describe('processPlayerGuess Function', () => {
     const result = processPlayerGuess('00', 10, mockGuesses, mockCpuShips, mockBoard, 3);
     expect(result.success).toBe(true);
     expect(result.hit).toBe(true);
-    expect(mockBoard[0][0]).toBe('X');
+    expect(mockBoard.getCell(0, 0)).toBe('X');
   });
 
   test('should handle misses', () => {
     const result = processPlayerGuess('99', 10, mockGuesses, mockCpuShips, mockBoard, 3);
     expect(result.success).toBe(true);
     expect(result.hit).toBe(false);
-    expect(mockBoard[9][9]).toBe('O');
+    expect(mockBoard.getCell(9, 9)).toBe('O');
   });
 
   test('should prevent duplicate guesses', () => {
@@ -255,7 +254,8 @@ describe('Edge Cases from Requirements', () => {
   test('should handle different board sizes', () => {
     [1, 5, 8, 15].forEach(size => {
       const result = createBoard(size);
-      expect(result.board).toHaveLength(size);
+      expect(result.opponentBoardObject.getSize()).toBe(size);
+      expect(result.playerBoardObject.getSize()).toBe(size);
       expect(isValidAndNewGuess(size-1, size-1, [], size)).toBe(true);
       expect(isValidAndNewGuess(size, 0, [], size)).toBe(false);
     });

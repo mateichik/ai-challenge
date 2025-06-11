@@ -26,7 +26,7 @@ describe('Ship Placement Integration Tests', () => {
 
   beforeEach(() => {
     gameState = new GameState();
-    board = Array(10).fill().map(() => Array(10).fill('~'));
+    board = new Board(10);
     ships = [];
   });
 
@@ -72,46 +72,65 @@ describe('Ship Placement Integration Tests', () => {
 
 describe('Complete Game Flow Integration', () => {
   let gameState;
+  let player;
+  let cpu;
 
   beforeEach(() => {
     gameState = new GameState();
-    const boards = createBoard(gameState.getBoardSize());
-    gameState.setBoard(boards.board);
-    gameState.setPlayerBoard(boards.playerBoard);
+    player = gameState.getPlayer();
+    cpu = gameState.getCpu();
     
     // Manually place ships for predictable testing using Ship objects
-    const playerShips = [
+    player.setShips([
       new Ship(['00', '01', '02']),
       new Ship(['10', '20', '30']),
       new Ship(['55', '56', '57'])
-    ];
+    ]);
     
-    const cpuShips = [
+    cpu.setShips([
       new Ship(['99', '98', '97']),
       new Ship(['11', '12', '13']),
       new Ship(['44', '45', '46'])
-    ];
-    
-    gameState.setPlayerShips(playerShips);
-    gameState.setCpuShips(cpuShips);
+    ]);
   });
 
   test('should handle complete ship sinking scenario', () => {
     // Sink first CPU ship
-    let result = processPlayerGuess('99', gameState.getBoardSize(), gameState.getGuesses(), gameState.getCpuShips(), gameState.getBoard(), gameState.getShipLength());
+    let result = processPlayerGuess(
+      '99', 
+      gameState.getBoardSize(), 
+      player.getGuesses(), 
+      cpu.getShips(), 
+      cpu.getBoard(), 
+      gameState.getShipLength()
+    );
     expect(result.hit).toBe(true);
     expect(result.sunk).toBe(false);
 
-    result = processPlayerGuess('98', gameState.getBoardSize(), gameState.getGuesses(), gameState.getCpuShips(), gameState.getBoard(), gameState.getShipLength());
+    result = processPlayerGuess(
+      '98', 
+      gameState.getBoardSize(), 
+      player.getGuesses(), 
+      cpu.getShips(), 
+      cpu.getBoard(), 
+      gameState.getShipLength()
+    );
     expect(result.hit).toBe(true);
     expect(result.sunk).toBe(false);
 
-    result = processPlayerGuess('97', gameState.getBoardSize(), gameState.getGuesses(), gameState.getCpuShips(), gameState.getBoard(), gameState.getShipLength());
+    result = processPlayerGuess(
+      '97', 
+      gameState.getBoardSize(), 
+      player.getGuesses(), 
+      cpu.getShips(), 
+      cpu.getBoard(), 
+      gameState.getShipLength()
+    );
     expect(result.hit).toBe(true);
     expect(result.sunk).toBe(true);
 
     // Verify ship is completely sunk
-    const sunkShip = gameState.getCpuShips()[0];
+    const sunkShip = cpu.getShips()[0];
     expect(sunkShip.isSunk()).toBe(true);
   });
 
@@ -121,13 +140,13 @@ describe('Complete Game Flow Integration', () => {
     expect(gameState.hasCpuWon()).toBe(false);
 
     // Simulate player winning
-    gameState.setCpuNumShips(0);
+    cpu.setNumShips(0);
     expect(gameState.hasPlayerWon()).toBe(true);
     expect(gameState.isGameOver()).toBe(true);
 
     // Reset and simulate CPU winning
-    gameState.setCpuNumShips(3);
-    gameState.setPlayerNumShips(0);
+    cpu.setNumShips(3);
+    player.setNumShips(0);
     expect(gameState.hasCpuWon()).toBe(true);
     expect(gameState.isGameOver()).toBe(true);
   });
@@ -135,27 +154,26 @@ describe('Complete Game Flow Integration', () => {
 
 describe('CPU AI Integration Tests', () => {
   let gameState;
+  let player;
+  let cpu;
 
   beforeEach(() => {
     gameState = new GameState();
-    const boards = createBoard(gameState.getBoardSize());
-    gameState.setBoard(boards.board);
-    gameState.setPlayerBoard(boards.playerBoard);
+    player = gameState.getPlayer();
+    cpu = gameState.getCpu();
     
-    const playerShips = [
+    player.setShips([
       new Ship(['50', '51', '52'])
-    ];
-    
-    gameState.setPlayerShips(playerShips);
+    ]);
   });
 
   test('should handle CPU hunt mode logic (REQ-045, REQ-046, REQ-047)', () => {
     const result = cpuTurn(
       'hunt',
       [],
-      gameState.getCpuGuesses(),
-      gameState.getPlayerShips(),
-      gameState.getPlayerBoard(),
+      cpu.getGuesses(),
+      player.getShips(),
+      player.getBoard(),
       gameState.getBoardSize(),
       gameState.getShipLength()
     );
@@ -172,8 +190,8 @@ describe('CPU AI Integration Tests', () => {
       'hunt',
       [],
       [], // Empty CPU guesses to allow hitting
-      gameState.getPlayerShips(),
-      gameState.getPlayerBoard(),
+      player.getShips(),
+      player.getBoard(),
       gameState.getBoardSize(),
       gameState.getShipLength()
     );
@@ -190,7 +208,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
     let mockBoard, mockGuesses, mockCpuShips;
 
     beforeEach(() => {
-      mockBoard = Array(10).fill().map(() => Array(10).fill('~'));
+      mockBoard = new Board(10);
       mockGuesses = [];
       mockCpuShips = [];
     });
@@ -241,7 +259,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
         [], // Empty target queue
         [],
         [],
-        Array(10).fill().map(() => Array(10).fill('~')),
+        new Board(10),
         10,
         3
       );
@@ -253,7 +271,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
       const playerShips = [
         new Ship(['00', '01', '02']) // Ship at edge
       ];
-      const playerBoard = Array(10).fill().map(() => Array(10).fill('~'));
+      const playerBoard = new Board(10);
 
       // Force CPU to hit edge location
       const result = cpuTurn(
@@ -283,7 +301,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
       const playerShips = [
         new Ship(['00', '10', '20']) // Ship starting at corner
       ];
-      const playerBoard = Array(10).fill().map(() => Array(10).fill('~'));
+      const playerBoard = new Board(10);
 
       const result = cpuTurn(
         'target',
@@ -308,13 +326,16 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
       const boards = createBoard(gameState.getBoardSize());
       
       // Verify board structure
-      expect(boards.board).toHaveLength(gameState.getBoardSize());
-      expect(boards.playerBoard).toHaveLength(gameState.getBoardSize());
+      expect(boards.opponentBoardObject.getSize()).toBe(gameState.getBoardSize());
+      expect(boards.playerBoardObject.getSize()).toBe(gameState.getBoardSize());
       
-      boards.board.forEach(row => {
-        expect(row).toHaveLength(gameState.getBoardSize());
-        expect(Array.isArray(row)).toBe(true);
-      });
+      // Verify all cells are water initially
+      for (let i = 0; i < gameState.getBoardSize(); i++) {
+        for (let j = 0; j < gameState.getBoardSize(); j++) {
+          expect(boards.opponentBoardObject.getCell(i, j)).toBe('~');
+          expect(boards.playerBoardObject.getCell(i, j)).toBe('~');
+        }
+      }
     });
 
     test('should handle memory constraints with large guess histories (EDGE-023)', () => {
@@ -323,8 +344,8 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
 
       // Add many guesses
       for (let i = 0; i < 1000; i++) {
-        gameState.addGuess(`${i % 10}${Math.floor(i / 10) % 10}`);
-        gameState.addCpuGuess(`${Math.floor(i / 10) % 10}${i % 10}`);
+        gameState.getPlayer().addGuess(`${i % 10}${Math.floor(i / 10) % 10}`);
+        gameState.getCpu().addGuess(`${Math.floor(i / 10) % 10}${i % 10}`);
       }
 
       const finalMemory = process.memoryUsage().heapUsed;
@@ -347,9 +368,9 @@ describe('Non-Functional Requirements Validation', () => {
     const result = processPlayerGuess(
       '50', 
       gameState.getBoardSize(), 
-      gameState.getGuesses(), 
-      gameState.getCpuShips(), 
-      boards.board, 
+      gameState.getPlayer().getGuesses(), 
+      gameState.getCpu().getShips(), 
+      boards.opponentBoardObject, 
       gameState.getShipLength()
     );
     
@@ -382,9 +403,9 @@ describe('Non-Functional Requirements Validation', () => {
         const result = processPlayerGuess(
           input, 
           gameState.getBoardSize(), 
-          gameState.getGuesses(), 
-          gameState.getCpuShips(), 
-          boards.board, 
+          gameState.getPlayer().getGuesses(), 
+          gameState.getCpu().getShips(), 
+          boards.opponentBoardObject, 
           gameState.getShipLength()
         );
         expect(result).toHaveProperty('success');
