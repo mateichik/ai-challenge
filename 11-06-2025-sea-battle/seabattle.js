@@ -63,8 +63,8 @@ function createBoard(size) {
   return { board: newBoard, playerBoard: newPlayerBoard };
 }
 
-// STATEFUL FUNCTION
-function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
+// TESTABLE FUNCTION - accepts all configuration parameters
+function placeShipsRandomly(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard) {
   let placedShips = 0;
   while (placedShips < numberOfShips) {
     const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
@@ -73,15 +73,15 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
     let collision = false;
 
     if (orientation === 'horizontal') {
-      startRow = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
-      startCol = Math.floor(Math.random() * (GameConfig.BOARD_SIZE - GameConfig.SHIP_LENGTH + 1));
+      startRow = Math.floor(Math.random() * boardSize);
+      startCol = Math.floor(Math.random() * (boardSize - shipLength + 1));
     } else {
-      startRow = Math.floor(Math.random() * (GameConfig.BOARD_SIZE - GameConfig.SHIP_LENGTH + 1));
-      startCol = Math.floor(Math.random() * GameConfig.BOARD_SIZE);
+      startRow = Math.floor(Math.random() * (boardSize - shipLength + 1));
+      startCol = Math.floor(Math.random() * boardSize);
     }
 
     let tempLocations = [];
-    for (let i = 0; i < GameConfig.SHIP_LENGTH; i++) {
+    for (let i = 0; i < shipLength; i++) {
       let checkRow = startRow;
       let checkCol = startCol;
       if (orientation === 'horizontal') {
@@ -92,7 +92,7 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
       const locationStr = String(checkRow) + String(checkCol);
       tempLocations.push(locationStr);
 
-      if (checkRow >= GameConfig.BOARD_SIZE || checkCol >= GameConfig.BOARD_SIZE) {
+      if (checkRow >= boardSize || checkCol >= boardSize) {
         collision = true;
         break;
       }
@@ -105,7 +105,7 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips) {
 
     if (!collision) {
       const newShip = { locations: [], hits: [] };
-      for (let i = 0; i < GameConfig.SHIP_LENGTH; i++) {
+      for (let i = 0; i < shipLength; i++) {
         let placeRow = startRow;
         let placeCol = startCol;
         if (orientation === 'horizontal') {
@@ -344,8 +344,8 @@ board = boards.board;
 playerBoard = boards.playerBoard;
 console.log('Boards created.');
 
-placeShipsRandomly(playerBoard, playerShips, GameConfig.NUM_SHIPS);
-placeShipsRandomly(board, cpuShips, GameConfig.NUM_SHIPS);
+placeShipsRandomly(playerBoard, playerShips, GameConfig.NUM_SHIPS, GameConfig.BOARD_SIZE, GameConfig.SHIP_LENGTH, playerBoard);
+placeShipsRandomly(board, cpuShips, GameConfig.NUM_SHIPS, GameConfig.BOARD_SIZE, GameConfig.SHIP_LENGTH, playerBoard);
 
 console.log("\nLet's play Sea Battle!");
 console.log('Try to sink the ' + GameConfig.NUM_SHIPS + ' enemy ships.');
