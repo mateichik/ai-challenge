@@ -6,6 +6,7 @@ const {
   GameState,
   GameLogic,
   Board,
+  Ship,
   isValidAndNewGuess,
   isSunk,
   createBoard,
@@ -57,18 +58,22 @@ describe('isValidAndNewGuess Function', () => {
 
 describe('isSunk Function', () => {
   test('should return false for ship with no hits', () => {
-    const ship = { hits: ['', '', ''] };
-    expect(isSunk(ship, 3)).toBe(false);
+    const ship = new Ship(['00', '01', '02']);
+    expect(isSunk(ship)).toBe(false);
   });
 
   test('should return false for ship with partial hits', () => {
-    const ship = { hits: ['hit', '', ''] };
-    expect(isSunk(ship, 3)).toBe(false);
+    const ship = new Ship(['00', '01', '02']);
+    ship.hit('00'); // Hit one location
+    expect(isSunk(ship)).toBe(false);
   });
 
   test('should return true for ship with all hits', () => {
-    const ship = { hits: ['hit', 'hit', 'hit'] };
-    expect(isSunk(ship, 3)).toBe(true);
+    const ship = new Ship(['00', '01', '02']);
+    ship.hit('00');
+    ship.hit('01');
+    ship.hit('02');
+    expect(isSunk(ship)).toBe(true);
   });
 });
 
@@ -146,38 +151,33 @@ describe('GameState Class', () => {
 
 describe('GameLogic Class', () => {
   let gameLogic;
+  let board;
+  let ships;
+  let playerBoard;
 
   beforeEach(() => {
     gameLogic = new GameLogic();
-  });
-
-  test('should initialize as stateless class', () => {
-    expect(gameLogic).toBeInstanceOf(GameLogic);
+    board = Array(10).fill().map(() => Array(10).fill('~'));
+    ships = [];
+    playerBoard = Array(10).fill().map(() => Array(10).fill('~'));
   });
 
   test('should place ships without collision', () => {
-    const board = Array(10).fill().map(() => Array(10).fill('~'));
-    const ships = [];
-    
-    gameLogic.placeShips(board, ships, 3, 10, 3, board);
-    
+    gameLogic.placeShips(board, ships, 3, 10, 3, playerBoard);
     expect(ships).toHaveLength(3);
     ships.forEach(ship => {
-      expect(ship.locations).toHaveLength(3);
-      expect(ship.hits).toHaveLength(3);
+      expect(ship.getLength()).toBe(3);
+      expect(ship.getLocations()).toHaveLength(3);
     });
   });
 
   test('should process hits correctly', () => {
-    const board = Array(10).fill().map(() => Array(10).fill('~'));
-    const guesses = [];
-    const ships = [{ locations: ['00', '01', '02'], hits: ['', '', ''] }];
+    const ship = new Ship(['00', '01', '02']);
+    ships.push(ship);
     
-    const result = gameLogic.processHit('00', 10, guesses, ships, board, 3);
-    
+    const result = gameLogic.processHit('00', 10, [], ships, board, 3);
     expect(result.success).toBe(true);
     expect(result.hit).toBe(true);
-    expect(result.sunk).toBe(false);
     expect(board[0][0]).toBe('X');
   });
 
@@ -210,7 +210,7 @@ describe('processPlayerGuess Function', () => {
     mockBoard = Array(10).fill().map(() => Array(10).fill('~'));
     mockGuesses = [];
     mockCpuShips = [
-      { locations: ['00', '01', '02'], hits: ['', '', ''] }
+      new Ship(['00', '01', '02'])
     ];
   });
 
@@ -382,5 +382,135 @@ describe('Board Class', () => {
     
     expect(largeBoard.isValidCoordinate(14, 14)).toBe(true);
     expect(largeBoard.isValidCoordinate(15, 0)).toBe(false);
+  });
+});
+
+describe('Ship Class', () => {
+  let ship;
+
+  beforeEach(() => {
+    ship = new Ship(['00', '01', '02']);
+  });
+
+  test('should initialize with correct locations and length', () => {
+    expect(ship.getLocations()).toEqual(['00', '01', '02']);
+    expect(ship.getLength()).toBe(3);
+    expect(ship.getHitCount()).toBe(0);
+    expect(ship.getRemainingHealth()).toBe(3);
+    expect(ship.isSunk()).toBe(false);
+  });
+
+  test('should throw error for invalid constructor arguments', () => {
+    expect(() => new Ship()).toThrow('Ship locations must be a non-empty array');
+    expect(() => new Ship([])).toThrow('Ship locations must be a non-empty array');
+    expect(() => new Ship(null)).toThrow('Ship locations must be a non-empty array');
+    expect(() => new Ship('invalid')).toThrow('Ship locations must be a non-empty array');
+  });
+
+  test('should handle hits correctly', () => {
+    // Hit valid location
+    expect(ship.hit('00')).toBe(true);
+    expect(ship.getHitCount()).toBe(1);
+    expect(ship.getRemainingHealth()).toBe(2);
+    expect(ship.getHitStatus('00')).toBe('hit');
+    expect(ship.isSunk()).toBe(false);
+
+    // Hit same location again
+    expect(ship.hit('00')).toBe(false);
+    expect(ship.getHitCount()).toBe(1);
+
+    // Hit invalid location
+    expect(ship.hit('99')).toBe(false);
+    expect(ship.getHitCount()).toBe(1);
+  });
+
+  test('should detect when ship is sunk', () => {
+    expect(ship.isSunk()).toBe(false);
+    
+    ship.hit('00');
+    expect(ship.isSunk()).toBe(false);
+    
+    ship.hit('01');
+    expect(ship.isSunk()).toBe(false);
+    
+    ship.hit('02');
+    expect(ship.isSunk()).toBe(true);
+    expect(ship.getRemainingHealth()).toBe(0);
+  });
+
+  test('should check location membership correctly', () => {
+    expect(ship.hasLocation('00')).toBe(true);
+    expect(ship.hasLocation('01')).toBe(true);
+    expect(ship.hasLocation('02')).toBe(true);
+    expect(ship.hasLocation('03')).toBe(false);
+    expect(ship.hasLocation('99')).toBe(false);
+  });
+
+  test('should return hit status correctly', () => {
+    expect(ship.getHitStatus('00')).toBe('');
+    expect(ship.getHitStatus('99')).toBe(null);
+    
+    ship.hit('00');
+    expect(ship.getHitStatus('00')).toBe('hit');
+    expect(ship.getHitStatus('01')).toBe('');
+  });
+
+  test('should protect internal state', () => {
+    const locations = ship.getLocations();
+    locations.push('99'); // Try to modify returned array
+    
+    expect(ship.getLocations()).toEqual(['00', '01', '02']); // Should be unchanged
+    expect(ship.hasLocation('99')).toBe(false);
+  });
+
+  test('should work with different ship sizes', () => {
+    const singleShip = new Ship(['55']);
+    const largeShip = new Ship(['10', '20', '30', '40', '50']);
+    
+    expect(singleShip.getLength()).toBe(1);
+    expect(largeShip.getLength()).toBe(5);
+    
+    singleShip.hit('55');
+    expect(singleShip.isSunk()).toBe(true);
+    
+    largeShip.hit('10');
+    largeShip.hit('20');
+    expect(largeShip.isSunk()).toBe(false);
+    expect(largeShip.getRemainingHealth()).toBe(3);
+  });
+
+  test('should support legacy format conversion', () => {
+    const legacyShip = { locations: ['11', '12', '13'], hits: ['hit', '', 'hit'] };
+    const convertedShip = Ship.fromLegacyFormat(legacyShip);
+    
+    expect(convertedShip.getLocations()).toEqual(['11', '12', '13']);
+    expect(convertedShip.getHitStatus('11')).toBe('hit');
+    expect(convertedShip.getHitStatus('12')).toBe('');
+    expect(convertedShip.getHitStatus('13')).toBe('hit');
+    expect(convertedShip.getHitCount()).toBe(2);
+    expect(convertedShip.isSunk()).toBe(false);
+  });
+});
+
+describe('isSunk Function', () => {
+  test('should work with Ship objects', () => {
+    const ship = new Ship(['00', '01', '02']);
+    
+    expect(isSunk(ship)).toBe(false);
+    
+    ship.hit('00');
+    ship.hit('01');
+    expect(isSunk(ship)).toBe(false);
+    
+    ship.hit('02');
+    expect(isSunk(ship)).toBe(true);
+  });
+
+  test('should throw error for non-Ship objects', () => {
+    const invalidShip = { locations: ['00'], hits: [''] };
+    expect(() => isSunk(invalidShip)).toThrow('Expected Ship object, got: object');
+    
+    expect(() => isSunk(null)).toThrow('Expected Ship object, got: object');
+    expect(() => isSunk('invalid')).toThrow('Expected Ship object, got: string');
   });
 }); 

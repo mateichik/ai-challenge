@@ -135,7 +135,7 @@ class GameLogic {
       }
 
       if (!collision) {
-        const newShip = { locations: [], hits: [] };
+        const shipLocations = [];
         for (let i = 0; i < shipLength; i++) {
           let placeRow = startRow;
           let placeCol = startCol;
@@ -145,13 +145,15 @@ class GameLogic {
             placeRow += i;
           }
           const locationStr = String(placeRow) + String(placeCol);
-          newShip.locations.push(locationStr);
-          newShip.hits.push('');
+          shipLocations.push(locationStr);
 
           if (targetBoard === playerBoard) {
             targetBoard[placeRow][placeCol] = 'S';
           }
         }
+        
+        // Create Ship object instead of plain object
+        const newShip = new Ship(shipLocations);
         shipsArray.push(newShip);
         placedShips++;
       }
@@ -203,32 +205,35 @@ class GameLogic {
 
     for (let i = 0; i < ships.length; i++) {
       const ship = ships[i];
-      const index = ship.locations.indexOf(formattedGuess);
-
-      if (index >= 0 && ship.hits[index] !== 'hit') {
-        ship.hits[index] = 'hit';
-        board[row][col] = 'X';
+      
+      if (ship.hasLocation(formattedGuess)) {
+        const hitResult = ship.hit(formattedGuess);
         
-        // Player-specific messages
-        if (playerType === 'player') {
-          console.log('PLAYER HIT!');
-        } else {
-          console.log('HIT!');
-        }
-        hit = true;
-
-        if (isSunk(ship, shipLength)) {
+        if (hitResult) {
+          // New hit
+          board[row][col] = 'X';
+          
+          // Player-specific messages
           if (playerType === 'player') {
-            console.log('You sunk an enemy battleship!');
+            console.log('PLAYER HIT!');
           } else {
-            console.log('You sunk a battleship!');
+            console.log('HIT!');
           }
-          sunk = true;
+          hit = true;
+
+          if (ship.isSunk()) {
+            if (playerType === 'player') {
+              console.log('You sunk an enemy battleship!');
+            } else {
+              console.log('You sunk a battleship!');
+            }
+            sunk = true;
+          }
+        } else {
+          // Already hit this location
+          console.log('You already hit that spot!');
+          hit = true;
         }
-        break;
-      } else if (index >= 0 && ship.hits[index] === 'hit') {
-        console.log('You already hit that spot!');
-        hit = true;
         break;
       }
     }
@@ -389,6 +394,94 @@ class Board {
   }
 }
 
+// Ship Management Class
+class Ship {
+  #locations;
+  #hits;
+  #length;
+
+  constructor(locations) {
+    if (!locations || !Array.isArray(locations) || locations.length === 0) {
+      throw new Error('Ship locations must be a non-empty array');
+    }
+    
+    this.#locations = [...locations]; // Create copy to prevent external modification
+    this.#length = locations.length;
+    this.#hits = new Array(this.#length).fill('');
+  }
+
+  // Hit a specific location on the ship
+  hit(location) {
+    const index = this.#locations.indexOf(location);
+    if (index === -1) {
+      return false; // Location not part of this ship
+    }
+    
+    if (this.#hits[index] === 'hit') {
+      return false; // Already hit
+    }
+    
+    this.#hits[index] = 'hit';
+    return true; // Successful hit
+  }
+
+  // Check if the ship is completely sunk
+  isSunk() {
+    return this.#hits.every(hit => hit === 'hit');
+  }
+
+  // Get ship locations (copy to prevent external modification)
+  getLocations() {
+    return [...this.#locations];
+  }
+
+  // Get hit status for a specific location
+  getHitStatus(location) {
+    const index = this.#locations.indexOf(location);
+    return index !== -1 ? this.#hits[index] : null;
+  }
+
+  // Check if a location belongs to this ship
+  hasLocation(location) {
+    return this.#locations.includes(location);
+  }
+
+  // Get the ship length
+  getLength() {
+    return this.#length;
+  }
+
+  // Get number of hits received
+  getHitCount() {
+    return this.#hits.filter(hit => hit === 'hit').length;
+  }
+
+  // Get remaining health (unhit segments)
+  getRemainingHealth() {
+    return this.#length - this.getHitCount();
+  }
+
+  // For backward compatibility - convert to old format (temporary for transition)
+  _toLegacyFormat() {
+    return {
+      locations: [...this.#locations],
+      hits: [...this.#hits]
+    };
+  }
+
+  // Create Ship from legacy format
+  static fromLegacyFormat(legacyShip) {
+    const ship = new Ship(legacyShip.locations);
+    // Restore hit status
+    for (let i = 0; i < legacyShip.hits.length; i++) {
+      if (legacyShip.hits[i] === 'hit') {
+        ship.#hits[i] = 'hit';
+      }
+    }
+    return ship;
+  }
+}
+
 // === UTILITY FUNCTIONS ===
 
 // TESTABLE FUNCTION - accepts boardSize parameter
@@ -400,14 +493,12 @@ function isValidAndNewGuess(row, col, guessList, boardSize) {
   return guessList.indexOf(guessStr) === -1;
 }
 
-// TESTABLE FUNCTION - accepts shipLength parameter
-function isSunk(ship, shipLength) {
-  for (let i = 0; i < shipLength; i++) {
-    if (ship.hits[i] !== 'hit') {
-      return false;
-    }
+// TESTABLE FUNCTION - accepts Ship object
+function isSunk(ship) {
+  if (!(ship instanceof Ship)) {
+    throw new Error('Expected Ship object, got: ' + typeof ship);
   }
-  return true;
+  return ship.isSunk();
 }
 
 // TESTABLE FUNCTION - accepts size parameter and returns boards
@@ -479,34 +570,37 @@ function cpuTurn(cpuMode, cpuTargetQueue, cpuGuesses, playerShips, playerBoard, 
 
     for (let i = 0; i < playerShips.length; i++) {
       const ship = playerShips[i];
-      const index = ship.locations.indexOf(guessStr);
+      
+      if (ship.hasLocation(guessStr)) {
+        const hitResult = ship.hit(guessStr);
+        
+        if (hitResult) {
+          // New hit
+          playerBoard[guessRow][guessCol] = 'X';
+          console.log('CPU HIT at ' + guessStr + '!');
+          hit = true;
 
-      if (index >= 0) {
-        ship.hits[index] = 'hit';
-        playerBoard[guessRow][guessCol] = 'X';
-        console.log('CPU HIT at ' + guessStr + '!');
-        hit = true;
+          if (ship.isSunk()) {
+            console.log('CPU sunk your battleship!');
+            sunk = true;
 
-        if (isSunk(ship, shipLength)) {
-          console.log('CPU sunk your battleship!');
-          sunk = true;
+            newCpuMode = 'hunt';
+            newCpuTargetQueue = [];
+          } else {
+            newCpuMode = 'target';
+            const adjacent = [
+              { r: guessRow - 1, c: guessCol },
+              { r: guessRow + 1, c: guessCol },
+              { r: guessRow, c: guessCol - 1 },
+              { r: guessRow, c: guessCol + 1 },
+            ];
+            for (const adj of adjacent) {
+              if (isValidAndNewGuess(adj.r, adj.c, cpuGuesses, boardSize)) {
+                const adjStr = String(adj.r) + String(adj.c);
 
-          newCpuMode = 'hunt';
-          newCpuTargetQueue = [];
-        } else {
-          newCpuMode = 'target';
-          const adjacent = [
-            { r: guessRow - 1, c: guessCol },
-            { r: guessRow + 1, c: guessCol },
-            { r: guessRow, c: guessCol - 1 },
-            { r: guessRow, c: guessCol + 1 },
-          ];
-          for (const adj of adjacent) {
-            if (isValidAndNewGuess(adj.r, adj.c, cpuGuesses, boardSize)) {
-              const adjStr = String(adj.r) + String(adj.c);
-
-              if (newCpuTargetQueue.indexOf(adjStr) === -1) {
-                newCpuTargetQueue.push(adjStr);
+                if (newCpuTargetQueue.indexOf(adjStr) === -1) {
+                  newCpuTargetQueue.push(adjStr);
+                }
               }
             }
           }
@@ -602,6 +696,7 @@ module.exports = {
   GameState,
   GameLogic,
   Board,
+  Ship,
   isValidAndNewGuess,
   isSunk,
   createBoard,

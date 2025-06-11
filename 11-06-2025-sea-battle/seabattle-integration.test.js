@@ -4,6 +4,7 @@ const {
   GameState,
   GameLogic,
   Board,
+  Ship,
   isValidAndNewGuess,
   isSunk,
   createBoard,
@@ -19,29 +20,23 @@ global.console.log = jest.fn();
 global.console.error = jest.fn();
 
 describe('Ship Placement Integration Tests', () => {
+  let gameState;
+  let board;
+  let ships;
+
+  beforeEach(() => {
+    gameState = new GameState();
+    board = Array(10).fill().map(() => Array(10).fill('~'));
+    ships = [];
+  });
+
   test('should place ships without overlapping (REQ-009)', () => {
-    const gameState = new GameState();
-    const boards = createBoard(gameState.getBoardSize());
-    gameState.setBoard(boards.board);
-    gameState.setPlayerBoard(boards.playerBoard);
+    placeShipsRandomly(board, ships, 3, 10, 3, board);
+    expect(ships).toHaveLength(3);
 
-    // Place ships and verify no overlaps
-    placeShipsRandomly(
-      gameState.getPlayerBoard(), 
-      gameState.getPlayerShips(), 
-      GameConfig.NUM_SHIPS, 
-      gameState.getBoardSize(), 
-      gameState.getShipLength(), 
-      gameState.getPlayerBoard()
-    );
-
-    const ships = gameState.getPlayerShips();
-    expect(ships).toHaveLength(GameConfig.NUM_SHIPS);
-
-    // Check for overlaps
     const occupiedCells = new Set();
     ships.forEach(ship => {
-      ship.locations.forEach(location => {
+      ship.getLocations().forEach(location => {
         expect(occupiedCells.has(location)).toBe(false);
         occupiedCells.add(location);
       });
@@ -49,52 +44,28 @@ describe('Ship Placement Integration Tests', () => {
   });
 
   test('should place ships within board boundaries (REQ-010)', () => {
-    const gameState = new GameState();
-    const boards = createBoard(gameState.getBoardSize());
-    gameState.setBoard(boards.board);
-    gameState.setPlayerBoard(boards.playerBoard);
+    placeShipsRandomly(board, ships, 3, 10, 3, board);
+    expect(ships).toHaveLength(3);
 
-    placeShipsRandomly(
-      gameState.getPlayerBoard(), 
-      gameState.getPlayerShips(), 
-      GameConfig.NUM_SHIPS, 
-      gameState.getBoardSize(), 
-      gameState.getShipLength(), 
-      gameState.getPlayerBoard()
-    );
-
-    const ships = gameState.getPlayerShips();
     ships.forEach(ship => {
-      ship.locations.forEach(location => {
+      ship.getLocations().forEach(location => {
         const row = parseInt(location[0]);
         const col = parseInt(location[1]);
         expect(row).toBeGreaterThanOrEqual(0);
-        expect(row).toBeLessThan(gameState.getBoardSize());
+        expect(row).toBeLessThan(10);
         expect(col).toBeGreaterThanOrEqual(0);
-        expect(col).toBeLessThan(gameState.getBoardSize());
+        expect(col).toBeLessThan(10);
       });
     });
   });
 
   test('should create ships of correct length (REQ-007)', () => {
-    const gameState = new GameState();
-    const boards = createBoard(gameState.getBoardSize());
-    gameState.setBoard(boards.board);
-    gameState.setPlayerBoard(boards.playerBoard);
+    placeShipsRandomly(board, ships, 3, 10, 3, board);
+    expect(ships).toHaveLength(3);
 
-    placeShipsRandomly(
-      gameState.getPlayerBoard(), 
-      gameState.getPlayerShips(), 
-      GameConfig.NUM_SHIPS, 
-      gameState.getBoardSize(), 
-      gameState.getShipLength(), 
-      gameState.getPlayerBoard()
-    );
-
-    const ships = gameState.getPlayerShips();
     ships.forEach(ship => {
-      expect(ship.locations).toHaveLength(GameConfig.SHIP_LENGTH);
-      expect(ship.hits).toHaveLength(GameConfig.SHIP_LENGTH);
+      expect(ship.getLength()).toBe(3);
+      expect(ship.getLocations()).toHaveLength(3);
     });
   });
 });
@@ -108,18 +79,21 @@ describe('Complete Game Flow Integration', () => {
     gameState.setBoard(boards.board);
     gameState.setPlayerBoard(boards.playerBoard);
     
-    // Manually place ships for predictable testing
-    gameState.setPlayerShips([
-      { locations: ['00', '01', '02'], hits: ['', '', ''] },
-      { locations: ['10', '20', '30'], hits: ['', '', ''] },
-      { locations: ['55', '56', '57'], hits: ['', '', ''] }
-    ]);
+    // Manually place ships for predictable testing using Ship objects
+    const playerShips = [
+      new Ship(['00', '01', '02']),
+      new Ship(['10', '20', '30']),
+      new Ship(['55', '56', '57'])
+    ];
     
-    gameState.setCpuShips([
-      { locations: ['99', '98', '97'], hits: ['', '', ''] },
-      { locations: ['11', '12', '13'], hits: ['', '', ''] },
-      { locations: ['44', '45', '46'], hits: ['', '', ''] }
-    ]);
+    const cpuShips = [
+      new Ship(['99', '98', '97']),
+      new Ship(['11', '12', '13']),
+      new Ship(['44', '45', '46'])
+    ];
+    
+    gameState.setPlayerShips(playerShips);
+    gameState.setCpuShips(cpuShips);
   });
 
   test('should handle complete ship sinking scenario', () => {
@@ -138,7 +112,7 @@ describe('Complete Game Flow Integration', () => {
 
     // Verify ship is completely sunk
     const sunkShip = gameState.getCpuShips()[0];
-    expect(isSunk(sunkShip, gameState.getShipLength())).toBe(true);
+    expect(sunkShip.isSunk()).toBe(true);
   });
 
   test('should track victory conditions correctly (REQ-059, REQ-060)', () => {
@@ -168,9 +142,11 @@ describe('CPU AI Integration Tests', () => {
     gameState.setBoard(boards.board);
     gameState.setPlayerBoard(boards.playerBoard);
     
-    gameState.setPlayerShips([
-      { locations: ['50', '51', '52'], hits: ['', '', ''] }
-    ]);
+    const playerShips = [
+      new Ship(['50', '51', '52'])
+    ];
+    
+    gameState.setPlayerShips(playerShips);
   });
 
   test('should handle CPU hunt mode logic (REQ-045, REQ-046, REQ-047)', () => {
@@ -275,7 +251,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
 
     test('should handle CPU hits at board edges (EDGE-016)', () => {
       const playerShips = [
-        { locations: ['00', '01', '02'], hits: ['', '', ''] } // Ship at edge
+        new Ship(['00', '01', '02']) // Ship at edge
       ];
       const playerBoard = Array(10).fill().map(() => Array(10).fill('~'));
 
@@ -305,7 +281,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
 
     test('should handle CPU hits in corner (EDGE-017)', () => {
       const playerShips = [
-        { locations: ['00', '10', '20'], hits: ['', '', ''] } // Ship starting at corner
+        new Ship(['00', '10', '20']) // Ship starting at corner
       ];
       const playerBoard = Array(10).fill().map(() => Array(10).fill('~'));
 
