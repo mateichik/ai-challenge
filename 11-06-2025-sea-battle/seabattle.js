@@ -1,6 +1,6 @@
-const readline = require('readline');
 const { GameDisplay } = require('./game-display.js');
 const { Board } = require('./board.js');
+const { InputHandler } = require('./input-handler.js');
 
 // Game Configuration Constants
 const GameConfig = {
@@ -489,10 +489,7 @@ class SeaBattleGame {
     this.gameState = new GameState();
     this.gameLogic = new GameLogic();
     this.display = new GameDisplay();
-    this.rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
+    this.inputHandler = new InputHandler();
   }
 
   async playGame() {
@@ -515,13 +512,11 @@ class SeaBattleGame {
     }
     
     this.endGame();
-    this.rl.close();
+    this.inputHandler.close();
   }
 
   async playerTurn() {
-    let guess = await new Promise(resolve => {
-        this.rl.question("Enter your guess (e.g., '00', '34', '98'): ", resolve);
-    });
+    let guess = await this.inputHandler.getPlayerGuess();
 
     const result = this.gameLogic.processHit(
         guess,
