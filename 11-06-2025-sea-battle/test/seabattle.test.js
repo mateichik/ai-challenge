@@ -1,7 +1,7 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
 
-const {
+import {
   GameConfig,
   GameState,
   GameLogic,
@@ -10,10 +10,11 @@ const {
   AIPlayer,
   createBoard,
   SeaBattleGame
-} = require('../seabattle.js');
-const { Board } = require('../board.js');
-const { GameDisplay } = require('../game-display.js');
-const { InputHandler } = require('../input-handler.js');
+} from '../seabattle.js';
+import { Board } from '../board.js';
+import { GameDisplay } from '../game-display.js';
+import { InputHandler } from '../input-handler.js';
+import readline from 'node:readline';
 
 // Mock console.log to prevent output during tests
 console.log = () => {};
@@ -25,7 +26,7 @@ const mockReadline = {
     close: () => {}
   })
 };
-require('readline').createInterface = mockReadline.createInterface;
+readline.createInterface = mockReadline.createInterface;
 
 test('GameConfig Constants', async (t) => {
   await t.test('should have correct configuration values', () => {

@@ -135,4 +135,4 @@ class Board {
   }
 }
 
-module.exports = { Board }; 
+export { Board }; 

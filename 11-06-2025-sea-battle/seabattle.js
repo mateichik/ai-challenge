@@ -1,6 +1,6 @@
-const { GameDisplay } = require('./game-display.js');
-const { Board } = require('./board.js');
-const { InputHandler } = require('./input-handler.js');
+import { GameDisplay } from './game-display.js';
+import { Board } from './board.js';
+import { InputHandler } from './input-handler.js';
 
 // Game Configuration Constants
 const GameConfig = {
@@ -529,15 +529,19 @@ class SeaBattleGame {
 }
 
 async function main() {
-  if (require.main === module) {
-    const game = new SeaBattleGame();
-    await game.playGame();
-  }
+  const game = new SeaBattleGame();
+  await game.playGame();
 }
 
-main();
+// Use ES module pattern for checking if file is run directly
+// Replace require.main === module with import.meta.url check
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
+  main();
+}
 
-module.exports = {
+// Export all necessary classes and functions
+export {
   GameConfig,
   GameState,
   GameLogic,
@@ -545,6 +549,5 @@ module.exports = {
   Player,
   AIPlayer,
   createBoard,
-  main,
   SeaBattleGame
 };

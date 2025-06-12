@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Console-based Sea Battle game with intelligent CPU opponent",
   "main": "seabattle.js",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "test": "node --test test/",
     "test:watch": "node --test --watch test/",

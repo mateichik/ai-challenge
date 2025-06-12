@@ -1,4 +1,4 @@
-const { Board } = require('./board.js');
+import { Board } from './board.js';
 
 class GameDisplay {
   renderBoards(opponentBoard, playerBoard) {
@@ -22,4 +22,4 @@ class GameDisplay {
   }
 }
 
-module.exports = { GameDisplay }; 
+export { GameDisplay }; 

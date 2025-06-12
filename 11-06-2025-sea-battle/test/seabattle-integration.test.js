@@ -1,7 +1,8 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import readline from 'node:readline';
 
-const {
+import {
   GameConfig,
   GameState,
   GameLogic,
@@ -10,10 +11,10 @@ const {
   AIPlayer,
   createBoard,
   SeaBattleGame
-} = require('../seabattle.js');
-const { Board } = require('../board.js');
-const { GameDisplay } = require('../game-display.js');
-const { InputHandler } = require('../input-handler.js');
+} from '../seabattle.js';
+import { Board } from '../board.js';
+import { GameDisplay } from '../game-display.js';
+import { InputHandler } from '../input-handler.js';
 
 // Mock console methods
 console.log = () => {};
@@ -26,7 +27,7 @@ const mockReadline = {
     close: () => {}
   })
 };
-require('readline').createInterface = mockReadline.createInterface;
+readline.createInterface = mockReadline.createInterface;
 
 test('Game Integration Tests', async (t) => {
   let game;
@@ -122,19 +123,23 @@ test('Ship Placement Integration Tests', async (t) => {
   });
 
   await t.test('should place ships without overlapping', () => {
+    // Clear ships array before placing new ships
+    ships = [];
     gameLogic.placeShips(board, ships, 3, 10, 3, playerBoard);
     assert.equal(ships.length, 3);
 
-    const occupiedCells = new Set();
-    ships.forEach(ship => {
-      ship.getLocations().forEach(location => {
-        assert.equal(occupiedCells.has(location), false);
-        occupiedCells.add(location);
-      });
-    });
+    // Check for overlapping - collect all locations first
+    const allLocations = ships.flatMap(ship => ship.getLocations());
+    const uniqueLocations = new Set(allLocations);
+    
+    // Instead of checking each location individually, check that the total count matches
+    // This verifies there are no duplicates
+    assert.equal(allLocations.length, uniqueLocations.size, 'Ship locations should not overlap');
   });
 
   await t.test('should place ships within board boundaries', () => {
+    // Clear ships array before placing new ships
+    ships = [];
     gameLogic.placeShips(board, ships, 3, 10, 3, playerBoard);
     assert.equal(ships.length, 3);
 
