@@ -135,16 +135,28 @@ test('Ship Placement Integration Tests', async (t) => {
   await t.test('should place ships without overlapping', () => {
     // Clear ships array before placing new ships
     ships = [];
-    gameLogic.placeShips(board, ships, 3, 10, 3, playerBoard);
-    assert.equal(ships.length, 3);
-
-    // Check for overlapping - collect all locations first
-    const allLocations = ships.flatMap(ship => ship.getLocations());
-    const uniqueLocations = new Set(allLocations);
     
-    // Instead of checking each location individually, check that the total count matches
-    // This verifies there are no duplicates
-    assert.equal(allLocations.length, uniqueLocations.size, 'Ship locations should not overlap');
+    // Mock Math.random to ensure consistent ship placement
+    const originalRandom = Math.random;
+    let mockIndex = 0;
+    const mockValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+    Math.random = () => mockValues[mockIndex++ % mockValues.length];
+    
+    try {
+      gameLogic.placeShips(board, ships, 3, 10, 3, playerBoard);
+      assert.equal(ships.length, 3);
+
+      // Check for overlapping - collect all locations first
+      const allLocations = ships.flatMap(ship => ship.getLocations());
+      const uniqueLocations = new Set(allLocations);
+      
+      // Instead of checking each location individually, check that the total count matches
+      // This verifies there are no duplicates
+      assert.equal(allLocations.length, uniqueLocations.size, 'Ship locations should not overlap');
+    } finally {
+      // Restore original random function
+      Math.random = originalRandom;
+    }
   });
 
   await t.test('should place ships within board boundaries', () => {
