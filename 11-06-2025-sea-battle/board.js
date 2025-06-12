@@ -125,6 +125,14 @@ class Board {
     
     return output;
   }
+
+  static isValidAndNewGuess(row, col, guessList, boardSize) {
+    if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
+      return false;
+    }
+    const guessStr = String(row) + String(col);
+    return guessList.indexOf(guessStr) === -1;
+  }
 }
 
 module.exports = { Board }; 

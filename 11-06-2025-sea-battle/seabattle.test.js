@@ -8,16 +8,12 @@ const {
   Ship,
   Player,
   AIPlayer,
-  isValidAndNewGuess,
-  isSunk,
   createBoard,
-  placeShipsRandomly,
-  processPlayerGuess,
-  gameLoop,
   main,
   SeaBattleGame
 } = require('./seabattle.js');
 const { Board } = require('./board.js');
+const { GameDisplay } = require('./game-display.js');
 
 beforeAll(() => {
   // Mock console.log to prevent output during tests
@@ -36,46 +32,27 @@ describe('GameConfig Constants', () => {
   });
 });
 
-describe('isValidAndNewGuess Function', () => {
-  test('should accept valid coordinates', () => {
-    expect(isValidAndNewGuess(0, 0, [], 10)).toBe(true);
-    expect(isValidAndNewGuess(5, 5, [], 10)).toBe(true);
-    expect(isValidAndNewGuess(9, 9, [], 10)).toBe(true);
-  });
+describe('Board static methods', () => {
+  describe('isValidAndNewGuess', () => {
+    test('should accept valid coordinates', () => {
+      expect(Board.isValidAndNewGuess(0, 0, [], 10)).toBe(true);
+      expect(Board.isValidAndNewGuess(5, 5, [], 10)).toBe(true);
+      expect(Board.isValidAndNewGuess(9, 9, [], 10)).toBe(true);
+    });
 
-  test('should reject out of bounds coordinates', () => {
-    expect(isValidAndNewGuess(-1, 5, [], 10)).toBe(false);
-    expect(isValidAndNewGuess(10, 5, [], 10)).toBe(false);
-    expect(isValidAndNewGuess(5, -1, [], 10)).toBe(false);
-    expect(isValidAndNewGuess(5, 10, [], 10)).toBe(false);
-  });
+    test('should reject out of bounds coordinates', () => {
+      expect(Board.isValidAndNewGuess(-1, 5, [], 10)).toBe(false);
+      expect(Board.isValidAndNewGuess(10, 5, [], 10)).toBe(false);
+      expect(Board.isValidAndNewGuess(5, -1, [], 10)).toBe(false);
+      expect(Board.isValidAndNewGuess(5, 10, [], 10)).toBe(false);
+    });
 
-  test('should detect duplicate guesses', () => {
-    const guesses = ['00', '55'];
-    expect(isValidAndNewGuess(0, 0, guesses, 10)).toBe(false);
-    expect(isValidAndNewGuess(5, 5, guesses, 10)).toBe(false);
-    expect(isValidAndNewGuess(1, 1, guesses, 10)).toBe(true);
-  });
-});
-
-describe('isSunk Function', () => {
-  test('should return false for ship with no hits', () => {
-    const ship = new Ship(['00', '01', '02']);
-    expect(isSunk(ship)).toBe(false);
-  });
-
-  test('should return false for ship with partial hits', () => {
-    const ship = new Ship(['00', '01', '02']);
-    ship.hit('00'); // Hit one location
-    expect(isSunk(ship)).toBe(false);
-  });
-
-  test('should return true for ship with all hits', () => {
-    const ship = new Ship(['00', '01', '02']);
-    ship.hit('00');
-    ship.hit('01');
-    ship.hit('02');
-    expect(isSunk(ship)).toBe(true);
+    test('should detect duplicate guesses', () => {
+      const guesses = ['00', '55'];
+      expect(Board.isValidAndNewGuess(0, 0, guesses, 10)).toBe(false);
+      expect(Board.isValidAndNewGuess(5, 5, guesses, 10)).toBe(false);
+      expect(Board.isValidAndNewGuess(1, 1, guesses, 10)).toBe(true);
+    });
   });
 });
 
@@ -154,12 +131,14 @@ describe('GameLogic Class', () => {
   let board;
   let ships;
   let playerBoard;
+  let display;
 
   beforeEach(() => {
     gameLogic = new GameLogic();
     board = new Board(10);
     ships = [];
     playerBoard = new Board(10);
+    display = new GameDisplay();
   });
 
   test('should place ships without collision', () => {
@@ -175,7 +154,7 @@ describe('GameLogic Class', () => {
     const ship = new Ship(['00', '01', '02']);
     ships.push(ship);
     
-    const result = gameLogic.processHit('00', 10, [], ships, board, 3);
+    const result = gameLogic.processHit('00', 10, [], ships, board, 3, 'generic', display);
     expect(result.success).toBe(true);
     expect(result.hit).toBe(true);
     expect(board.getCell(0, 0)).toBe('X');
@@ -201,44 +180,35 @@ describe('GameLogic Class', () => {
     expect(result.gameOver).toBe(true);
     expect(result.winner).toBe('CPU');
   });
-});
-
-describe('processPlayerGuess Function', () => {
-  let mockBoard, mockGuesses, mockCpuShips;
-
-  beforeEach(() => {
-    mockBoard = new Board(10);
-    mockGuesses = [];
-    mockCpuShips = [
-      new Ship(['00', '01', '02'])
-    ];
-  });
 
   test('should reject invalid input formats', () => {
     const inputs = [null, '', '1', '123', 'ab', '!@'];
     inputs.forEach(input => {
-      const result = processPlayerGuess(input, 10, mockGuesses, mockCpuShips, mockBoard, 3);
+      const result = gameLogic.processHit(input, 10, [], [], new Board(10), 3, 'generic', display);
       expect(result.success).toBe(false);
     });
   });
 
   test('should handle valid hits', () => {
-    const result = processPlayerGuess('00', 10, mockGuesses, mockCpuShips, mockBoard, 3);
+    const ships = [new Ship(['00', '01', '02'])];
+    const board = new Board(10);
+    const result = gameLogic.processHit('00', 10, [], ships, board, 3, 'generic', display);
     expect(result.success).toBe(true);
     expect(result.hit).toBe(true);
-    expect(mockBoard.getCell(0, 0)).toBe('X');
+    expect(board.getCell(0, 0)).toBe('X');
   });
 
   test('should handle misses', () => {
-    const result = processPlayerGuess('99', 10, mockGuesses, mockCpuShips, mockBoard, 3);
+    const board = new Board(10);
+    const result = gameLogic.processHit('99', 10, [], [], board, 3, 'generic', display);
     expect(result.success).toBe(true);
     expect(result.hit).toBe(false);
-    expect(mockBoard.getCell(9, 9)).toBe('O');
+    expect(board.getCell(9, 9)).toBe('O');
   });
 
   test('should prevent duplicate guesses', () => {
-    mockGuesses.push('00');
-    const result = processPlayerGuess('00', 10, mockGuesses, mockCpuShips, mockBoard, 3);
+    const guesses = ['00'];
+    const result = gameLogic.processHit('00', 10, guesses, [], new Board(10), 3, 'generic', display);
     expect(result.success).toBe(false);
   });
 });
@@ -246,19 +216,19 @@ describe('processPlayerGuess Function', () => {
 describe('Edge Cases from Requirements', () => {
   test('should handle boundary coordinates correctly', () => {
     // Test corner cases
-    expect(isValidAndNewGuess(0, 0, [], 10)).toBe(true);
-    expect(isValidAndNewGuess(0, 9, [], 10)).toBe(true);
-    expect(isValidAndNewGuess(9, 0, [], 10)).toBe(true);
-    expect(isValidAndNewGuess(9, 9, [], 10)).toBe(true);
+    expect(Board.isValidAndNewGuess(0, 0, [], 10)).toBe(true);
+    expect(Board.isValidAndNewGuess(0, 9, [], 10)).toBe(true);
+    expect(Board.isValidAndNewGuess(9, 0, [], 10)).toBe(true);
+    expect(Board.isValidAndNewGuess(9, 9, [], 10)).toBe(true);
   });
 
-  test('should handle different board sizes', () => {
+  test('should handle different board sizes for createBoard', () => {
     [1, 5, 8, 15].forEach(size => {
       const result = createBoard(size);
       expect(result.opponentBoardObject.getSize()).toBe(size);
       expect(result.playerBoardObject.getSize()).toBe(size);
-      expect(isValidAndNewGuess(size-1, size-1, [], size)).toBe(true);
-      expect(isValidAndNewGuess(size, 0, [], size)).toBe(false);
+      expect(Board.isValidAndNewGuess(size-1, size-1, [], size)).toBe(true);
+      expect(Board.isValidAndNewGuess(size, 0, [], size)).toBe(false);
     });
   });
 
@@ -269,13 +239,13 @@ describe('Edge Cases from Requirements', () => {
     }
     
     const start = Date.now();
-    const result = isValidAndNewGuess(5, 5, largeGuessList, 10);
+    Board.isValidAndNewGuess(5, 5, largeGuessList, 10);
     const end = Date.now();
     
     expect(end - start).toBeLessThan(50);
   });
 
-  test('should handle different board sizes', () => {
+  test('should handle different board sizes for cell initialization', () => {
     [1, 5, 8, 15].forEach(size => {
       const result = createBoard(size);
       expect(result.opponentBoardObject.getSize()).toBe(size);
@@ -504,28 +474,5 @@ describe('Ship Class', () => {
     expect(convertedShip.getHitStatus('13')).toBe('hit');
     expect(convertedShip.getHitCount()).toBe(2);
     expect(convertedShip.isSunk()).toBe(false);
-  });
-});
-
-describe('isSunk Function', () => {
-  test('should work with Ship objects', () => {
-    const ship = new Ship(['00', '01', '02']);
-    
-    expect(isSunk(ship)).toBe(false);
-    
-    ship.hit('00');
-    ship.hit('01');
-    expect(isSunk(ship)).toBe(false);
-    
-    ship.hit('02');
-    expect(isSunk(ship)).toBe(true);
-  });
-
-  test('should throw error for non-Ship objects', () => {
-    const invalidShip = { locations: ['00'], hits: [''] };
-    expect(() => isSunk(invalidShip)).toThrow('Expected Ship object, got: object');
-    
-    expect(() => isSunk(null)).toThrow('Expected Ship object, got: object');
-    expect(() => isSunk('invalid')).toThrow('Expected Ship object, got: string');
   });
 }); 

@@ -366,7 +366,7 @@ class AIPlayer extends Player {
         guessCol = Math.floor(Math.random() * boardSize);
         guessStr = String(guessRow) + String(guessCol);
 
-        if (!isValidAndNewGuess(guessRow, guessCol, this.guesses, boardSize)) {
+        if (!Board.isValidAndNewGuess(guessRow, guessCol, this.guesses, boardSize)) {
           continue;
         }
       }
@@ -427,7 +427,7 @@ class AIPlayer extends Player {
     ];
 
     for (const adj of adjacent) {
-      if (isValidAndNewGuess(adj.r, adj.c, this.guesses, boardSize)) {
+      if (Board.isValidAndNewGuess(adj.r, adj.c, this.guesses, boardSize)) {
         const adjStr = String(adj.r) + String(adj.c);
         if (this.#targetQueue.indexOf(adjStr) === -1) {
           this.#targetQueue.push(adjStr);
@@ -435,25 +435,6 @@ class AIPlayer extends Player {
       }
     }
   }
-}
-
-// === UTILITY FUNCTIONS ===
-
-// TESTABLE FUNCTION - accepts boardSize parameter
-function isValidAndNewGuess(row, col, guessList, boardSize) {
-  if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
-    return false;
-  }
-  const guessStr = String(row) + String(col);
-  return guessList.indexOf(guessStr) === -1;
-}
-
-// TESTABLE FUNCTION - accepts Ship object
-function isSunk(ship) {
-  if (!(ship instanceof Ship)) {
-    throw new Error('Expected Ship object, got: ' + typeof ship);
-  }
-  return ship.isSunk();
 }
 
 // TESTABLE FUNCTION - accepts size parameter and returns boards
@@ -468,20 +449,6 @@ function createBoard(size) {
     opponentBoardObject: opponentBoard,
     playerBoardObject: playerBoard
   };
-}
-
-// TESTABLE FUNCTION - accepts all configuration parameters
-function placeShipsRandomly(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard) {
-  const gameLogic = new GameLogic();
-  return gameLogic.placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard);
-}
-
-// TESTABLE FUNCTION - accepts dependencies as parameters
-function processPlayerGuess(guess, boardSize, guesses, cpuShips, board, shipLength) {
-  // This function is now superseded by GameLogic.processHit
-  // but kept for compatibility with older tests if any.
-  const logic = new GameLogic();
-  return logic.processHit(guess, boardSize, guesses, cpuShips, board, shipLength, 'generic', new GameDisplay());
 }
 
 class SeaBattleGame {
@@ -576,11 +543,7 @@ module.exports = {
   Ship,
   Player,
   AIPlayer,
-  isValidAndNewGuess,
-  isSunk,
   createBoard,
-  placeShipsRandomly,
-  processPlayerGuess,
   main,
   SeaBattleGame
 };

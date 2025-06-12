@@ -6,12 +6,7 @@ const {
   Ship,
   Player,
   AIPlayer,
-  isValidAndNewGuess,
-  isSunk,
-  createBoard,
-  placeShipsRandomly,
-  processPlayerGuess,
-  gameLoop
+  createBoard
 } = require('./seabattle.js');
 const { Board } = require('./board.js');
 const { GameDisplay } = require('./game-display.js');
@@ -21,18 +16,18 @@ global.console.log = jest.fn();
 global.console.error = jest.fn();
 
 describe('Ship Placement Integration Tests', () => {
-  let gameState;
+  let gameLogic;
   let board;
   let ships;
 
   beforeEach(() => {
-    gameState = new GameState();
+    gameLogic = new GameLogic();
     board = new Board(10);
     ships = [];
   });
 
   test('should place ships without overlapping (REQ-009)', () => {
-    placeShipsRandomly(board, ships, 3, 10, 3, board);
+    gameLogic.placeShips(board, ships, 3, 10, 3, board);
     expect(ships).toHaveLength(3);
 
     const occupiedCells = new Set();
@@ -45,7 +40,7 @@ describe('Ship Placement Integration Tests', () => {
   });
 
   test('should place ships within board boundaries (REQ-010)', () => {
-    placeShipsRandomly(board, ships, 3, 10, 3, board);
+    gameLogic.placeShips(board, ships, 3, 10, 3, board);
     expect(ships).toHaveLength(3);
 
     ships.forEach(ship => {
@@ -61,7 +56,7 @@ describe('Ship Placement Integration Tests', () => {
   });
 
   test('should create ships of correct length (REQ-007)', () => {
-    placeShipsRandomly(board, ships, 3, 10, 3, board);
+    gameLogic.placeShips(board, ships, 3, 10, 3, board);
     expect(ships).toHaveLength(3);
 
     ships.forEach(ship => {
@@ -75,11 +70,15 @@ describe('Complete Game Flow Integration', () => {
   let gameState;
   let player;
   let cpu;
+  let gameLogic;
+  let display;
 
   beforeEach(() => {
     gameState = new GameState();
     player = gameState.getPlayer();
     cpu = gameState.getCpu();
+    gameLogic = new GameLogic();
+    display = new GameDisplay();
     
     // Manually place ships for predictable testing using Ship objects
     player.setShips([
@@ -97,35 +96,41 @@ describe('Complete Game Flow Integration', () => {
 
   test('should handle complete ship sinking scenario', () => {
     // Sink first CPU ship
-    let result = processPlayerGuess(
+    let result = gameLogic.processHit(
       '99', 
       gameState.getBoardSize(), 
       player.getGuesses(), 
       cpu.getShips(), 
       cpu.getBoard(), 
-      gameState.getShipLength()
+      gameState.getShipLength(),
+      'player',
+      display
     );
     expect(result.hit).toBe(true);
     expect(result.sunk).toBe(false);
 
-    result = processPlayerGuess(
+    result = gameLogic.processHit(
       '98', 
       gameState.getBoardSize(), 
       player.getGuesses(), 
       cpu.getShips(), 
       cpu.getBoard(), 
-      gameState.getShipLength()
+      gameState.getShipLength(),
+      'player',
+      display
     );
     expect(result.hit).toBe(true);
     expect(result.sunk).toBe(false);
 
-    result = processPlayerGuess(
+    result = gameLogic.processHit(
       '97', 
       gameState.getBoardSize(), 
       player.getGuesses(), 
       cpu.getShips(), 
       cpu.getBoard(), 
-      gameState.getShipLength()
+      gameState.getShipLength(),
+      'player',
+      display
     );
     expect(result.hit).toBe(true);
     expect(result.sunk).toBe(true);
@@ -202,12 +207,14 @@ describe('CPU AI Integration Tests', () => {
 
 describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
   describe('Input Validation Edge Cases', () => {
-    let mockBoard, mockGuesses, mockCpuShips;
+    let mockBoard, mockGuesses, mockCpuShips, gameLogic, display;
 
     beforeEach(() => {
       mockBoard = new Board(10);
       mockGuesses = [];
       mockCpuShips = [];
+      gameLogic = new GameLogic();
+      display = new GameDisplay();
     });
 
     test('should handle various invalid input formats (EDGE-001 to EDGE-006)', () => {
@@ -226,7 +233,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
       ];
 
       invalidInputs.forEach(input => {
-        const result = processPlayerGuess(input, 10, mockGuesses, mockCpuShips, mockBoard, 3);
+        const result = gameLogic.processHit(input, 10, mockGuesses, mockCpuShips, mockBoard, 3, 'generic', display);
         expect(result.success).toBe(false);
       });
     });
@@ -243,7 +250,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
       ];
 
       boundaryTests.forEach(test => {
-        const result = processPlayerGuess(test.input, 10, mockGuesses, mockCpuShips, mockBoard, 3);
+        const result = gameLogic.processHit(test.input, 10, mockGuesses, mockCpuShips, mockBoard, 3, 'generic', display);
         expect(result.success).toBe(test.valid);
       });
     });
@@ -348,6 +355,14 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
 });
 
 describe('Non-Functional Requirements Validation', () => {
+  let gameLogic;
+  let display;
+
+  beforeEach(() => {
+    gameLogic = new GameLogic();
+    display = new GameDisplay();
+  });
+
   test('should meet performance requirements (NFR-001)', () => {
     const gameState = new GameState();
     const boards = createBoard(gameState.getBoardSize());
@@ -355,13 +370,15 @@ describe('Non-Functional Requirements Validation', () => {
     const start = Date.now();
     
     // Simulate user input processing
-    const result = processPlayerGuess(
+    const result = gameLogic.processHit(
       '50', 
       gameState.getBoardSize(), 
       gameState.getPlayer().getGuesses(), 
       gameState.getCpu().getShips(), 
       boards.opponentBoardObject, 
-      gameState.getShipLength()
+      gameState.getShipLength(),
+      'player',
+      display
     );
     
     const end = Date.now();
@@ -390,13 +407,15 @@ describe('Non-Functional Requirements Validation', () => {
     
     edgeCases.forEach(input => {
       expect(() => {
-        const result = processPlayerGuess(
+        const result = gameLogic.processHit(
           input, 
           gameState.getBoardSize(), 
           gameState.getPlayer().getGuesses(), 
           gameState.getCpu().getShips(), 
           boards.opponentBoardObject, 
-          gameState.getShipLength()
+          gameState.getShipLength(),
+          'player',
+          display
         );
         expect(result).toHaveProperty('success');
       }).not.toThrow();
@@ -404,7 +423,7 @@ describe('Non-Functional Requirements Validation', () => {
   });
 });
 
-describe('printBoard Function Tests', () => {
+describe('GameDisplay Class Tests', () => {
   let gameDisplay;
   beforeEach(() => {
     gameDisplay = new GameDisplay();
