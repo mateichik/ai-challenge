@@ -40,10 +40,14 @@ class GameLogic {
   // Move ship placement logic from placeShipsRandomly function
   placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard) {
     let placedShips = 0;
-    while (placedShips < numberOfShips) {
+    let attempts = 0;
+    const maxAttempts = boardSize * boardSize * 10; // Safeguard against infinite loops
+
+    while (placedShips < numberOfShips && attempts < maxAttempts) {
       const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
       let startRow, startCol;
       let collision = false;
+      attempts++;
 
       if (orientation === 'horizontal') {
         startRow = Math.floor(Math.random() * boardSize);

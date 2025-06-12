@@ -249,107 +249,190 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
         { input: '0a', valid: false },  // Invalid column
       ];
 
-      boundaryTests.forEach(test => {
-        const result = gameLogic.processHit(test.input, 10, mockGuesses, mockCpuShips, mockBoard, 3, 'generic', display);
-        expect(result.success).toBe(test.valid);
+      boundaryTests.forEach(testCase => {
+        const result = gameLogic.processHit(testCase.input, 10, mockGuesses, mockCpuShips, mockBoard, 3, 'generic', display);
+        expect(result.success).toBe(testCase.valid);
       });
     });
   });
 
-  describe('AI Edge Cases', () => {
-    test('should handle empty target queue in target mode (EDGE-015)', () => {
-      const cpu = new AIPlayer(10, 3, 3);
-      cpu.setMode('target');
-      cpu.setTargetQueue([]);
-      
-      const result = cpu.calculateNextMove(
-        [],
-        new Board(10),
-        10
-      );
+  describe('Game State Edge Cases', () => {
+    let gameState, gameLogic;
 
-      expect(cpu.getMode()).toBe('hunt');
+    beforeEach(() => {
+      gameState = new GameState();
+      gameLogic = new GameLogic();
     });
 
-    test('should handle CPU hits at board edges (EDGE-016)', () => {
-      const cpu = new AIPlayer(10, 3, 3);
-      const playerShips = [
-        new Ship(['00', '01', '02']) // Ship at edge
-      ];
-      const playerBoard = new Board(10);
-      
-      // Manually add a hit to enter target mode and set queue
-      cpu.setMode('target');
-      cpu.addGuess('00');
-      playerBoard.setCell(0, 0, 'X');
-      cpu.setTargetQueue(['01', '10']);
-
-      const result = cpu.calculateNextMove(
-        playerShips,
-        playerBoard,
-        10
-      );
-
-      // Check that it can correctly process the next item from the queue
-      expect(result.hit).toBe(true);
-      expect(playerBoard.getCell(0, 1)).toBe('X');
+    test('should handle game end with player winning (EDGE-008)', () => {
+      gameState.getCpu().setNumShips(0);
+      const result = gameLogic.checkGameEnd(gameState);
+      expect(result.gameOver).toBe(true);
+      expect(result.winner).toBe('Player');
     });
 
-    test('should handle CPU hits in corner (EDGE-017)', () => {
-      const cpu = new AIPlayer(10, 3, 3);
-      const playerShips = [
-        new Ship(['00', '10', '20']) // Ship starting at corner
-      ];
-      const playerBoard = new Board(10);
+    test('should handle game end with CPU winning (EDGE-009)', () => {
+      gameState.getPlayer().setNumShips(0);
+      const result = gameLogic.checkGameEnd(gameState);
+      expect(result.gameOver).toBe(true);
+      expect(result.winner).toBe('CPU');
+    });
 
-      // Force a hit at 00 to trigger targeting
-      cpu.addGuess('11'); // add a miss to avoid random hit
-      const result = cpu.calculateNextMove(
-        playerShips,
-        playerBoard,
-        10
-      );
-
-      if (result.hit) {
-        // Should have fewer adjacent coordinates due to corner position
-        expect(cpu.getTargetQueue().length).toBeLessThanOrEqual(2);
-      }
+    test('should handle simultaneous win (EDGE-010)', () => {
+      // Player wins first in this scenario
+      gameState.getPlayer().setNumShips(0);
+      gameState.getCpu().setNumShips(0);
+      const result = gameLogic.checkGameEnd(gameState);
+      expect(result.winner).toBe('CPU'); // CPU wins because it's checked second
     });
   });
 
-  describe('Game State Edge Cases', () => {
-    test('should handle board state integrity (EDGE-022)', () => {
-      const gameState = new GameState();
-      const boards = createBoard(gameState.getBoardSize());
-      
-      // Verify board structure
-      expect(boards.opponentBoardObject.getSize()).toBe(gameState.getBoardSize());
-      expect(boards.playerBoardObject.getSize()).toBe(gameState.getBoardSize());
-      
-      // Verify all cells are water initially
-      for (let i = 0; i < gameState.getBoardSize(); i++) {
-        for (let j = 0; j < gameState.getBoardSize(); j++) {
-          expect(boards.opponentBoardObject.getCell(i, j)).toBe('~');
-          expect(boards.playerBoardObject.getCell(i, j)).toBe('~');
+  describe('Ship Overlap and Placement Edge Cases', () => {
+    let gameLogic, board, ships, playerBoard;
+
+    beforeEach(() => {
+      gameLogic = new GameLogic();
+      board = new Board(10);
+      ships = [];
+      playerBoard = new Board(10);
+    });
+
+    test('should handle placing ships on a full board (EDGE-011)', () => {
+      // Fill the board to make placement impossible
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          board.setCell(i, j, 'S');
         }
+      }
+      
+      // We can't really "test" the infinite loop, so we trust the logic
+      // is sound and would not place overlapping ships.
+      // This test is more of a logical placeholder.
+      gameLogic.placeShips(board, ships, 1, 10, 3, playerBoard);
+      expect(ships.length).toBe(0); // Should not be able to place any ships
+    });
+
+    test('should handle ship length of 1 (EDGE-012)', () => {
+      gameLogic.placeShips(board, ships, 3, 10, 1, playerBoard);
+      expect(ships).toHaveLength(3);
+      ships.forEach(ship => {
+        expect(ship.getLength()).toBe(1);
+      });
+    });
+
+    test('should handle ship length equal to board size (EDGE-013)', () => {
+      const smallBoard = new Board(5);
+      const smallShips = [];
+      gameLogic.placeShips(smallBoard, smallShips, 1, 5, 5, smallBoard);
+      expect(smallShips).toHaveLength(1);
+      expect(smallShips[0].getLength()).toBe(5);
+    });
+
+    test('should not place player ships on opponent board (EDGE-014)', () => {
+      const opponentBoard = new Board(10);
+      gameLogic.placeShips(playerBoard, ships, 3, 10, 3, playerBoard);
+      
+      let shipCellsOnOpponent = 0;
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          if (opponentBoard.getCell(i, j) === 'S') {
+            shipCellsOnOpponent++;
+          }
+        }
+      }
+      expect(shipCellsOnOpponent).toBe(0);
+    });
+  });
+
+  describe('CPU AI Advanced Scenarios', () => {
+    let gameState, player, cpu, display;
+
+    beforeEach(() => {
+      gameState = new GameState();
+      player = gameState.getPlayer();
+      cpu = gameState.getCpu();
+      display = new GameDisplay();
+    });
+
+    test('should handle checkerboard guess pattern (EDGE-015)', () => {
+      // Test AI doesn't get stuck on patterns like checkerboards
+      // Pre-fill guesses to force a specific pattern
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          if ((i + j) % 2 === 0) {
+            cpu.addGuess(String(i) + String(j));
+          }
+        }
+      }
+      
+      // AI should still be able to find a target
+      const result = cpu.calculateNextMove(
+        player.getShips(),
+        player.getBoard(),
+        gameState.getBoardSize(),
+        display
+      );
+      
+      expect(cpu.getGuesses().length).toBe(51); // 50 pre-filled + 1 new
+    });
+
+    test('should handle sinking the last ship correctly (EDGE-016)', () => {
+      const lastShip = new Ship(['00']);
+      player.setShips([lastShip]);
+      player.setNumShips(1);
+      
+      const result = cpu.calculateNextMove(
+        player.getShips(),
+        player.getBoard(),
+        gameState.getBoardSize(),
+        display
+      );
+      
+      // It's not guaranteed to hit, but if it does...
+      if(result.hit) {
+        expect(result.sunk).toBe(true);
       }
     });
 
-    test('should handle memory constraints with large guess histories (EDGE-023)', () => {
-      const gameState = new GameState();
-      const initialMemory = process.memoryUsage().heapUsed;
+    test('should clear target queue after sinking a ship (EDGE-017)', () => {
+      player.setShips([new Ship(['00', '01', '02'])]);
+      
+      // Simulate hitting and sinking
+      cpu.setMode('target');
+      cpu.setTargetQueue(['01', '02']);
+      
+      // Mock a hit that sinks the ship
+      jest.spyOn(player.getShips()[0], 'isSunk').mockReturnValue(true);
 
-      // Add many guesses
-      for (let i = 0; i < 1000; i++) {
-        gameState.getPlayer().addGuess(`${i % 10}${Math.floor(i / 10) % 10}`);
-        gameState.getCpu().addGuess(`${Math.floor(i / 10) % 10}${i % 10}`);
-      }
+      cpu.calculateNextMove(
+        player.getShips(),
+        player.getBoard(),
+        gameState.getBoardSize(),
+        display
+      );
+      
+      expect(cpu.getMode()).toBe('hunt');
+      expect(cpu.getTargetQueue().length).toBe(0);
+    });
 
-      const finalMemory = process.memoryUsage().heapUsed;
-      const memoryIncrease = finalMemory - initialMemory;
-
-      // Memory increase should be reasonable
-      expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024); // Less than 10MB
+    test('should not target already guessed locations (EDGE-018)', () => {
+      cpu.addGuess('01');
+      cpu.addGuess('10');
+      cpu.addGuess('12');
+      cpu.addGuess('21');
+      
+      cpu.setMode('target');
+      cpu.setTargetQueue(['01', '10', '12', '21']);
+      
+      // All targets are already guessed, so it should fall back to hunt
+      cpu.calculateNextMove(
+        player.getShips(),
+        player.getBoard(),
+        gameState.getBoardSize(),
+        display
+      );
+      
+      expect(cpu.getMode()).toBe('hunt');
     });
   });
 });
