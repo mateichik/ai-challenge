@@ -1,4 +1,6 @@
 const readline = require('readline');
+const { GameDisplay } = require('./game-display.js');
+const { Board } = require('./board.js');
 
 // Game Configuration Constants
 const GameConfig = {
@@ -96,18 +98,13 @@ class GameLogic {
         placedShips++;
       }
     }
-    console.log(
-      numberOfShips +
-        ' ships placed randomly for ' +
-        (targetBoard === playerBoard ? 'Player.' : 'CPU.'),
-    );
   }
 
   // Move hit detection logic from processPlayerGuess function
-  processHit(guess, boardSize, guesses, ships, board, shipLength, playerType = 'generic') {
+  processHit(guess, boardSize, guesses, ships, board, shipLength, playerType = 'generic', display) {
     // Input validation
     if (guess === null || guess === undefined || typeof guess !== 'string' || guess.length !== 2) {
-      console.log('Oops, input must be exactly two digits (e.g., 00, 34, 98).');
+      if (display) display.showMessage('Oops, input must be exactly two digits (e.g., 00, 34, 98).');
       return { success: false, hit: false, sunk: false };
     }
 
@@ -122,7 +119,7 @@ class GameLogic {
       col < 0 ||
       col >= boardSize
     ) {
-      console.log(
+      if (display) display.showMessage(
         'Oops, please enter valid row and column numbers between 0 and ' +
           (boardSize - 1) +
           '.',
@@ -133,7 +130,7 @@ class GameLogic {
     const formattedGuess = guess;
 
     if (guesses.indexOf(formattedGuess) !== -1) {
-      console.log('You already guessed that location!');
+      if (display) display.showMessage('You already guessed that location!');
       return { success: false, hit: false, sunk: false };
     }
     guesses.push(formattedGuess);
@@ -152,24 +149,28 @@ class GameLogic {
           board.setCell(row, col, 'X');
           
           // Player-specific messages
-          if (playerType === 'player') {
-            console.log('PLAYER HIT!');
-          } else {
-            console.log('HIT!');
+          if (display) {
+            if (playerType === 'player') {
+              display.showMessage('PLAYER HIT!');
+            } else {
+              display.showMessage('HIT!');
+            }
           }
           hit = true;
 
           if (ship.isSunk()) {
-            if (playerType === 'player') {
-              console.log('You sunk an enemy battleship!');
-            } else {
-              console.log('You sunk a battleship!');
+            if (display) {
+              if (playerType === 'player') {
+                display.showMessage('You sunk an enemy battleship!');
+              } else {
+                display.showMessage('You sunk a battleship!');
+              }
             }
             sunk = true;
           }
         } else {
           // Already hit this location
-          console.log('You already hit that spot!');
+          if (display) display.showMessage('You already hit that spot!');
           hit = true;
         }
         break;
@@ -178,10 +179,12 @@ class GameLogic {
 
     if (!hit) {
       board.setCell(row, col, 'O');
-      if (playerType === 'player') {
-        console.log('PLAYER MISS.');
-      } else {
-        console.log('MISS.');
+      if (display) {
+        if (playerType === 'player') {
+          display.showMessage('PLAYER MISS.');
+        } else {
+          display.showMessage('MISS.');
+        }
       }
     }
 
@@ -199,136 +202,6 @@ class GameLogic {
     }
     
     return { gameOver: false, winner: null, message: null };
-  }
-}
-
-// Board Management Class
-class Board {
-  #boardArray;
-  #size;
-
-  constructor(size) {
-    this.#size = size;
-    this.#boardArray = this.#initializeBoard();
-  }
-
-  // Private method to initialize the board array
-  #initializeBoard() {
-    const board = [];
-    for (let i = 0; i < this.#size; i++) {
-      board[i] = [];
-      for (let j = 0; j < this.#size; j++) {
-        board[i][j] = '~';
-      }
-    }
-    return board;
-  }
-
-  // Get the value of a specific cell
-  getCell(row, col) {
-    if (!this.isValidCoordinate(row, col)) {
-      throw new Error(`Invalid coordinates: ${row}, ${col}`);
-    }
-    return this.#boardArray[row][col];
-  }
-
-  // Set the value of a specific cell
-  setCell(row, col, value) {
-    if (!this.isValidCoordinate(row, col)) {
-      throw new Error(`Invalid coordinates: ${row}, ${col}`);
-    }
-    this.#boardArray[row][col] = value;
-  }
-
-  // Check if coordinates are valid for this board
-  isValidCoordinate(row, col) {
-    return row >= 0 && row < this.#size && col >= 0 && col < this.#size;
-  }
-
-  // Get the board size
-  getSize() {
-    return this.#size;
-  }
-
-  // Get a copy of the entire board array (for backward compatibility)
-  getBoardArray() {
-    return this.#boardArray.map(row => [...row]);
-  }
-
-  // Get direct reference to board array (for performance - use carefully)
-  _getDirectBoardReference() {
-    return this.#boardArray;
-  }
-
-  // Clear the board (reset all cells to water)
-  clear() {
-    for (let i = 0; i < this.#size; i++) {
-      for (let j = 0; j < this.#size; j++) {
-        this.#boardArray[i][j] = '~';
-      }
-    }
-  }
-
-  // Render method for board display logic
-  render(title = 'BOARD', showShips = false) {
-    let output = `\n   --- ${title} ---\n`;
-    
-    // Header with column numbers
-    let header = '  ';
-    for (let h = 0; h < this.#size; h++) {
-      header += h + ' ';
-    }
-    output += header + '\n';
-
-    // Board rows
-    for (let i = 0; i < this.#size; i++) {
-      let rowStr = i + ' ';
-      for (let j = 0; j < this.#size; j++) {
-        let cellValue = this.#boardArray[i][j];
-        // Hide ships if showShips is false
-        if (!showShips && cellValue === 'S') {
-          cellValue = '~';
-        }
-        rowStr += cellValue + ' ';
-      }
-      output += rowStr + '\n';
-    }
-    
-    return output;
-  }
-
-  // Render two boards side by side (for game display)
-  static renderSideBySide(opponentBoard, playerBoard) {
-    const size = opponentBoard.getSize();
-    let output = '\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---\n';
-    
-    // Header
-    let header = '  ';
-    for (let h = 0; h < size; h++) header += h + ' ';
-    output += header + '     ' + header + '\n';
-
-    // Board rows
-    for (let i = 0; i < size; i++) {
-      let rowStr = i + ' ';
-
-      // Opponent board (hide ships)
-      for (let j = 0; j < size; j++) {
-        let cellValue = opponentBoard.getCell(i, j);
-        if (cellValue === 'S') cellValue = '~'; // Hide opponent ships
-        rowStr += cellValue + ' ';
-      }
-      
-      rowStr += '    ' + i + ' ';
-
-      // Player board (show ships)
-      for (let j = 0; j < size; j++) {
-        rowStr += playerBoard.getCell(i, j) + ' ';
-      }
-      
-      output += rowStr + '\n';
-    }
-    
-    return output;
   }
 }
 
@@ -470,7 +343,7 @@ class AIPlayer extends Player {
   setTargetQueue(queue) { this.#targetQueue = [...queue]; } // Store copy to prevent external modification
   
   // Main method to calculate next move
-  calculateNextMove(playerShips, playerBoard, boardSize) {
+  calculateNextMove(playerShips, playerBoard, boardSize, display) {
     let guessRow, guessCol, guessStr;
     let madeValidGuess = false;
     let hit = false;
@@ -481,7 +354,7 @@ class AIPlayer extends Player {
         guessStr = this.#targetQueue.shift();
         guessRow = parseInt(guessStr[0]);
         guessCol = parseInt(guessStr[1]);
-        console.log('CPU targets: ' + guessStr);
+        if (display) display.showMessage('CPU targets: ' + guessStr);
 
         if (this.guesses.indexOf(guessStr) !== -1) {
           if (this.#targetQueue.length === 0) this.#mode = 'hunt';
@@ -510,11 +383,11 @@ class AIPlayer extends Player {
           if (hitResult) {
             // New hit
             playerBoard.setCell(guessRow, guessCol, 'X');
-            console.log('CPU HIT at ' + guessStr + '!');
+            if (display) display.showMessage('CPU HIT at ' + guessStr + '!');
             hit = true;
 
             if (ship.isSunk()) {
-              console.log('CPU sunk your battleship!');
+              if (display) display.showMessage('CPU sunk your battleship!');
               sunk = true;
 
               this.#mode = 'hunt';
@@ -530,7 +403,7 @@ class AIPlayer extends Player {
 
       if (!hit) {
         playerBoard.setCell(guessRow, guessCol, 'O');
-        console.log('CPU MISS at ' + guessStr + '.');
+        if (display) display.showMessage('CPU MISS at ' + guessStr + '.');
 
         if (this.#mode === 'target' && this.#targetQueue.length === 0) {
           this.#mode = 'hunt';
@@ -603,24 +476,19 @@ function placeShipsRandomly(targetBoard, shipsArray, numberOfShips, boardSize, s
   return gameLogic.placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard);
 }
 
-// TESTABLE FUNCTION - accepts Board objects as parameters
-function printBoard(opponentBoard, playerBoard, boardSize) {
-  // Use the Board rendering method
-  console.log(Board.renderSideBySide(opponentBoard, playerBoard));
-}
-
 // TESTABLE FUNCTION - accepts dependencies as parameters
 function processPlayerGuess(guess, boardSize, guesses, cpuShips, board, shipLength) {
   // This function is now superseded by GameLogic.processHit
   // but kept for compatibility with older tests if any.
   const logic = new GameLogic();
-  return logic.processHit(guess, boardSize, guesses, cpuShips, board, shipLength);
+  return logic.processHit(guess, boardSize, guesses, cpuShips, board, shipLength, 'generic', new GameDisplay());
 }
 
 class SeaBattleGame {
   constructor() {
     this.gameState = new GameState();
     this.gameLogic = new GameLogic();
+    this.display = new GameDisplay();
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
@@ -628,15 +496,17 @@ class SeaBattleGame {
   }
 
   async playGame() {
-    console.log('*** Welcome to Sea Battle! ***');
+    this.display.showWelcome();
     const boards = createBoard(this.gameState.getBoardSize());
     this.gameState.getPlayer().setBoard(boards.playerBoardObject);
     this.gameState.getCpu().setBoard(boards.opponentBoardObject);
     
     this.gameLogic.placeShips(this.gameState.getPlayer().getBoard(), this.gameState.getPlayer().getShips(), 3, this.gameState.getBoardSize(), this.gameState.getShipLength(), this.gameState.getPlayer().getBoard());
+    this.display.showMessage('Player ships placed.');
     this.gameLogic.placeShips(this.gameState.getCpu().getBoard(), this.gameState.getCpu().getShips(), 3, this.gameState.getBoardSize(), this.gameState.getShipLength());
+    this.display.showMessage('CPU ships placed.');
     
-    printBoard(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard(), this.gameState.getBoardSize());
+    this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
 
     while (!this.gameState.isGameOver()) {
       await this.playerTurn();
@@ -660,35 +530,37 @@ class SeaBattleGame {
         this.gameState.getCpu().getShips(),
         this.gameState.getCpu().getBoard(),
         this.gameState.getShipLength(),
-        'player'
+        'player',
+        this.display
     );
     
     if (result.sunk) {
         this.gameState.getCpu().decrementNumShips();
     }
     
-    printBoard(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard(), this.gameState.getBoardSize());
+    this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
   }
 
   cpuTurn() {
-    console.log("\n--- CPU's Turn ---");
+    this.display.showMessage("\n--- CPU's Turn ---");
     const result = this.gameState.getCpu().calculateNextMove(
         this.gameState.getPlayer().getShips(),
         this.gameState.getPlayer().getBoard(),
-        this.gameState.getBoardSize()
+        this.gameState.getBoardSize(),
+        this.display
     );
 
     if (result.sunk) {
         this.gameState.getPlayer().decrementNumShips();
     }
     
-    printBoard(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard(), this.gameState.getBoardSize());
+    this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
   }
   
   endGame() {
     const endState = this.gameLogic.checkGameEnd(this.gameState);
     if (endState.gameOver) {
-      console.log(endState.message);
+      this.display.showGameEnd(endState.message);
     }
   }
 }
@@ -706,7 +578,6 @@ module.exports = {
   GameConfig,
   GameState,
   GameLogic,
-  Board,
   Ship,
   Player,
   AIPlayer,
@@ -714,7 +585,6 @@ module.exports = {
   isSunk,
   createBoard,
   placeShipsRandomly,
-  printBoard,
   processPlayerGuess,
   main,
   SeaBattleGame

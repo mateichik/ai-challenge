@@ -3,7 +3,6 @@ const {
   GameConfig,
   GameState,
   GameLogic,
-  Board,
   Ship,
   Player,
   AIPlayer,
@@ -12,9 +11,10 @@ const {
   createBoard,
   placeShipsRandomly,
   processPlayerGuess,
-  printBoard,
   gameLoop
 } = require('./seabattle.js');
+const { Board } = require('./board.js');
+const { GameDisplay } = require('./game-display.js');
 
 // Mock console methods
 global.console.log = jest.fn();
@@ -405,12 +405,18 @@ describe('Non-Functional Requirements Validation', () => {
 });
 
 describe('printBoard Function Tests', () => {
+  let gameDisplay;
+  beforeEach(() => {
+    gameDisplay = new GameDisplay();
+    console.log.mockClear();
+  });
+
   test('should handle empty boards', () => {
     const emptyBoard = new Board(3);
     const emptyPlayerBoard = new Board(3);
     
     expect(() => {
-      printBoard(emptyBoard, emptyPlayerBoard, 3);
+      gameDisplay.renderBoards(emptyBoard, emptyPlayerBoard);
     }).not.toThrow();
     
     expect(console.log).toHaveBeenCalled();
@@ -428,7 +434,7 @@ describe('printBoard Function Tests', () => {
     playerBoard.setCell(2, 1, 'X');
     
     expect(() => {
-      printBoard(board, playerBoard, 3);
+      gameDisplay.renderBoards(board, playerBoard);
     }).not.toThrow();
   });
 
@@ -438,7 +444,7 @@ describe('printBoard Function Tests', () => {
       const playerBoard = new Board(size);
       
       expect(() => {
-        printBoard(board, playerBoard, size);
+        gameDisplay.renderBoards(board, playerBoard);
       }).not.toThrow();
     });
   });

@@ -5,7 +5,6 @@ const {
   GameConfig,
   GameState,
   GameLogic,
-  Board,
   Ship,
   Player,
   AIPlayer,
@@ -14,9 +13,11 @@ const {
   createBoard,
   placeShipsRandomly,
   processPlayerGuess,
-  printBoard,
-  gameLoop
+  gameLoop,
+  main,
+  SeaBattleGame
 } = require('./seabattle.js');
+const { Board } = require('./board.js');
 
 beforeAll(() => {
   // Mock console.log to prevent output during tests
