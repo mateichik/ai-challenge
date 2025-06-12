@@ -1,13 +1,25 @@
+/**
+ * Board Class - Represents a game board
+ * Manages the 2D grid and provides methods for cell manipulation
+ */
 class Board {
   #boardArray;
   #size;
 
+  /**
+   * Creates a new game board
+   * @param {number} size - Size of the board (creates a size x size grid)
+   */
   constructor(size) {
     this.#size = size;
     this.#boardArray = this.#initializeBoard();
   }
 
-  // Private method to initialize the board array
+  /**
+   * Initializes the board with water cells
+   * @returns {Array} 2D array representing the board
+   * @private
+   */
   #initializeBoard() {
     const board = [];
     for (let i = 0; i < this.#size; i++) {
@@ -19,7 +31,13 @@ class Board {
     return board;
   }
 
-  // Get the value of a specific cell
+  /**
+   * Gets the value of a specific cell
+   * @param {number} row - Row index
+   * @param {number} col - Column index
+   * @returns {string} Cell value
+   * @throws {Error} If coordinates are invalid
+   */
   getCell(row, col) {
     if (!this.isValidCoordinate(row, col)) {
       throw new Error(`Invalid coordinates: ${row}, ${col}`);
@@ -27,7 +45,13 @@ class Board {
     return this.#boardArray[row][col];
   }
 
-  // Set the value of a specific cell
+  /**
+   * Sets the value of a specific cell
+   * @param {number} row - Row index
+   * @param {number} col - Column index
+   * @param {string} value - New cell value
+   * @throws {Error} If coordinates are invalid
+   */
   setCell(row, col, value) {
     if (!this.isValidCoordinate(row, col)) {
       throw new Error(`Invalid coordinates: ${row}, ${col}`);
@@ -35,27 +59,44 @@ class Board {
     this.#boardArray[row][col] = value;
   }
 
-  // Check if coordinates are valid for this board
+  /**
+   * Checks if coordinates are valid for this board
+   * @param {number} row - Row index
+   * @param {number} col - Column index
+   * @returns {boolean} True if coordinates are valid
+   */
   isValidCoordinate(row, col) {
     return row >= 0 && row < this.#size && col >= 0 && col < this.#size;
   }
 
-  // Get the board size
+  /**
+   * Gets the board size
+   * @returns {number} Board size
+   */
   getSize() {
     return this.#size;
   }
 
-  // Get a copy of the entire board array (for backward compatibility)
+  /**
+   * Gets a copy of the entire board array
+   * @returns {Array} Copy of the board array
+   */
   getBoardArray() {
     return this.#boardArray.map(row => [...row]);
   }
 
-  // Get direct reference to board array (for performance - use carefully)
+  /**
+   * Gets direct reference to board array (for performance - use carefully)
+   * @returns {Array} Direct reference to board array
+   * @deprecated Use getBoardArray() instead
+   */
   _getDirectBoardReference() {
     return this.#boardArray;
   }
 
-  // Clear the board (reset all cells to water)
+  /**
+   * Clears the board (resets all cells to water)
+   */
   clear() {
     for (let i = 0; i < this.#size; i++) {
       for (let j = 0; j < this.#size; j++) {
@@ -64,7 +105,12 @@ class Board {
     }
   }
 
-  // Render method for board display logic
+  /**
+   * Renders the board as a string
+   * @param {string} title - Title to display above the board
+   * @param {boolean} showShips - Whether to show ships or hide them
+   * @returns {string} String representation of the board
+   */
   render(title = 'BOARD', showShips = false) {
     let output = `\n   --- ${title} ---\n`;
     
@@ -92,7 +138,13 @@ class Board {
     return output;
   }
 
-  // Render two boards side by side (for game display)
+  /**
+   * Renders two boards side by side
+   * @param {Board} opponentBoard - Opponent's board
+   * @param {Board} playerBoard - Player's board
+   * @returns {string} String representation of both boards
+   * @static
+   */
   static renderSideBySide(opponentBoard, playerBoard) {
     const size = opponentBoard.getSize();
     let output = '\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---\n';
@@ -126,6 +178,15 @@ class Board {
     return output;
   }
 
+  /**
+   * Checks if a guess is valid and new
+   * @param {number} row - Row index
+   * @param {number} col - Column index
+   * @param {Array} guessList - List of previous guesses
+   * @param {number} boardSize - Size of the board
+   * @returns {boolean} True if the guess is valid and new
+   * @static
+   */
   static isValidAndNewGuess(row, col, guessList, boardSize) {
     if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
       return false;

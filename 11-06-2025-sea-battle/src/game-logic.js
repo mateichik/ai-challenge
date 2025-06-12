@@ -1,12 +1,23 @@
 import { Ship } from './ship.js';
 
-// Game Logic Management Class
+/**
+ * Game Logic Management Class
+ * Handles core game mechanics like ship placement and hit detection
+ */
 class GameLogic {
   constructor() {
     // GameLogic is stateless - all methods accept state as parameters
   }
 
-  // Move ship placement logic from placeShipsRandomly function
+  /**
+   * Places ships randomly on the game board
+   * @param {Board} targetBoard - The board to place ships on
+   * @param {Array} shipsArray - Array to store created ships
+   * @param {number} numberOfShips - Number of ships to place
+   * @param {number} boardSize - Size of the game board
+   * @param {number} shipLength - Length of each ship
+   * @param {Board} playerBoard - Player's board (for visibility)
+   */
   placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard) {
     // Clear existing ships array
     shipsArray.length = 0;
@@ -83,7 +94,18 @@ class GameLogic {
     }
   }
 
-  // Move hit detection logic from processPlayerGuess function
+  /**
+   * Processes a player's guess and determines hit/miss result
+   * @param {string} guess - The coordinate guess (e.g., "00")
+   * @param {number} boardSize - Size of the game board
+   * @param {Array} guesses - Array of previous guesses
+   * @param {Array} ships - Array of ships to check for hits
+   * @param {Board} board - Game board to update
+   * @param {number} shipLength - Length of ships
+   * @param {string} playerType - Type of player ('player', 'cpu', or 'generic')
+   * @param {GameDisplay} display - Display object for showing messages
+   * @returns {Object} Result object with success, hit, and sunk properties
+   */
   processHit(guess, boardSize, guesses, ships, board, shipLength, playerType = 'generic', display) {
     // Input validation
     if (guess === null || guess === undefined || typeof guess !== 'string' || guess.length !== 2) {
@@ -166,7 +188,11 @@ class GameLogic {
     return { success: true, hit: hit, sunk: sunk };
   }
 
-  // Move victory condition checking logic
+  /**
+   * Checks if the game has ended
+   * @param {GameState} gameState - Current game state
+   * @returns {Object} Game end status with gameOver, winner, and message properties
+   */
   checkGameEnd(gameState) {
     if (gameState.getPlayer().getNumShips() === 0) {
       return { gameOver: true, winner: 'CPU', message: '*** GAME OVER! The CPU sunk all your battleships! ***' };

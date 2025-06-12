@@ -7,6 +7,9 @@ import { AIPlayer } from './src/ai-player.js';
 import { createBoard } from './src/board-utils.js';
 import { SeaBattleGame } from './src/sea-battle-game.js';
 
+/**
+ * Main entry point for the Sea Battle game
+ */
 async function main() {
   const game = new SeaBattleGame();
   await game.playGame();

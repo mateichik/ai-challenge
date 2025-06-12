@@ -2,12 +2,21 @@ import { Player } from './player.js';
 import { Board } from './board.js';
 import { GameLogic } from './game-logic.js';
 
-// AI Player Class - extends Player with AI-specific functionality
+/**
+ * AI Player Class - extends Player with AI-specific functionality
+ * Implements hunt/target strategy for CPU opponent
+ */
 class AIPlayer extends Player {
   #mode;
   #targetQueue;
   #gameLogic;
 
+  /**
+   * Creates a new AI player
+   * @param {number} boardSize - Size of the game board
+   * @param {number} numShips - Number of ships
+   * @param {number} shipLength - Length of each ship
+   */
   constructor(boardSize, numShips, shipLength) {
     super(boardSize, numShips, shipLength);
     this.#mode = 'hunt';
@@ -15,14 +24,38 @@ class AIPlayer extends Player {
     this.#gameLogic = new GameLogic();
   }
 
-  // Getters and setters for AI state
+  /**
+   * Gets the current AI mode
+   * @returns {string} Current mode ('hunt' or 'target')
+   */
   getMode() { return this.#mode; }
+  
+  /**
+   * Sets the AI mode
+   * @param {string} mode - Mode to set ('hunt' or 'target')
+   */
   setMode(mode) { this.#mode = mode; }
   
+  /**
+   * Gets a copy of the target queue
+   * @returns {Array} Copy of the target queue
+   */
   getTargetQueue() { return [...this.#targetQueue]; } // Return copy to prevent external modification
+  
+  /**
+   * Sets the target queue
+   * @param {Array} queue - New target queue
+   */
   setTargetQueue(queue) { this.#targetQueue = [...queue]; } // Store copy to prevent external modification
   
-  // Main method to calculate next move
+  /**
+   * Calculates the next move for the AI player
+   * @param {Array} playerShips - Player's ships to target
+   * @param {Board} playerBoard - Player's board to update
+   * @param {number} boardSize - Size of the game board
+   * @param {GameDisplay} display - Display object for showing messages
+   * @returns {Object} Result object with hit and sunk properties
+   */
   calculateNextMove(playerShips, playerBoard, boardSize, display) {
     let guessRow, guessCol, guessStr;
     let madeValidGuess = false;
@@ -106,7 +139,13 @@ class AIPlayer extends Player {
     };
   }
 
-  // Helper method to add adjacent coordinates to target queue
+  /**
+   * Adds adjacent coordinates to the target queue
+   * @param {number} row - Row of the hit
+   * @param {number} col - Column of the hit
+   * @param {number} boardSize - Size of the game board
+   * @private
+   */
   #addAdjacentTargets(row, col, boardSize) {
     const adjacent = [
       { r: row - 1, c: col },
