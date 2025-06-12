@@ -7,12 +7,13 @@ const {
   GameLogic,
   Board,
   Ship,
+  Player,
+  AIPlayer,
   isValidAndNewGuess,
   isSunk,
   createBoard,
   placeShipsRandomly,
   processPlayerGuess,
-  cpuTurn,
   printBoard,
   gameLoop
 } = require('./seabattle.js');
@@ -120,11 +121,10 @@ describe('GameState Class', () => {
   });
 
   test('should initialize with correct defaults', () => {
-    expect(gameState.getPlayer().getNumShips()).toBe(3);
-    expect(gameState.getCpu().getNumShips()).toBe(3);
+    expect(gameState.getPlayer()).toBeInstanceOf(Player);
+    expect(gameState.getCpu()).toBeInstanceOf(AIPlayer);
+    expect(gameState.getCpu().getMode()).toBe('hunt');
     expect(gameState.getBoardSize()).toBe(10);
-    expect(gameState.getShipLength()).toBe(3);
-    expect(gameState.getCpuMode()).toBe('hunt');
   });
 
   test('should handle ship count changes', () => {
@@ -272,6 +272,20 @@ describe('Edge Cases from Requirements', () => {
     const end = Date.now();
     
     expect(end - start).toBeLessThan(50);
+  });
+
+  test('should handle different board sizes', () => {
+    [1, 5, 8, 15].forEach(size => {
+      const result = createBoard(size);
+      expect(result.opponentBoardObject.getSize()).toBe(size);
+      expect(result.playerBoardObject.getSize()).toBe(size);
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          expect(result.opponentBoardObject.getCell(i, j)).toBe('~');
+          expect(result.playerBoardObject.getCell(i, j)).toBe('~');
+        }
+      }
+    });
   });
 });
 

@@ -11,22 +11,16 @@ const GameConfig = {
 class GameState {
   constructor() {
     this.player = new Player(GameConfig.BOARD_SIZE, GameConfig.NUM_SHIPS, GameConfig.SHIP_LENGTH);
-    this.cpu = new Player(GameConfig.BOARD_SIZE, GameConfig.NUM_SHIPS, GameConfig.SHIP_LENGTH);
-    this.cpuMode = 'hunt';
-    this.cpuTargetQueue = [];
+    this.cpu = new AIPlayer(GameConfig.BOARD_SIZE, GameConfig.NUM_SHIPS, GameConfig.SHIP_LENGTH);
     this.boardSize = GameConfig.BOARD_SIZE;
     this.shipLength = GameConfig.SHIP_LENGTH;
   }
 
   getPlayer() { return this.player; }
   getCpu() { return this.cpu; }
-  getCpuMode() { return this.cpuMode; }
-  getCpuTargetQueue() { return this.cpuTargetQueue; }
   getBoardSize() { return this.boardSize; }
   getShipLength() { return this.shipLength; }
-
-  setCpuMode(mode) { this.cpuMode = mode; }
-  setCpuTargetQueue(queue) { this.cpuTargetQueue = queue; }
+  getCpuMode() { return this.cpu.getMode(); }
 
   isGameOver() {
     return this.player.getNumShips() === 0 || this.cpu.getNumShips() === 0;
@@ -455,6 +449,121 @@ class Player {
   setShipLength(length) { this.shipLength = length; }
 }
 
+// AI Player Class - extends Player with AI-specific functionality
+class AIPlayer extends Player {
+  #mode;
+  #targetQueue;
+  #gameLogic;
+
+  constructor(boardSize, numShips, shipLength) {
+    super(boardSize, numShips, shipLength);
+    this.#mode = 'hunt';
+    this.#targetQueue = [];
+    this.#gameLogic = new GameLogic();
+  }
+
+  // Getters and setters for AI state
+  getMode() { return this.#mode; }
+  setMode(mode) { this.#mode = mode; }
+  
+  getTargetQueue() { return [...this.#targetQueue]; } // Return copy to prevent external modification
+  setTargetQueue(queue) { this.#targetQueue = [...queue]; } // Store copy to prevent external modification
+  
+  // Main method to calculate next move
+  calculateNextMove(playerShips, playerBoard, boardSize) {
+    let guessRow, guessCol, guessStr;
+    let madeValidGuess = false;
+    let hit = false;
+    let sunk = false;
+
+    while (!madeValidGuess) {
+      if (this.#mode === 'target' && this.#targetQueue.length > 0) {
+        guessStr = this.#targetQueue.shift();
+        guessRow = parseInt(guessStr[0]);
+        guessCol = parseInt(guessStr[1]);
+        console.log('CPU targets: ' + guessStr);
+
+        if (this.guesses.indexOf(guessStr) !== -1) {
+          if (this.#targetQueue.length === 0) this.#mode = 'hunt';
+          continue;
+        }
+      } else {
+        this.#mode = 'hunt';
+        guessRow = Math.floor(Math.random() * boardSize);
+        guessCol = Math.floor(Math.random() * boardSize);
+        guessStr = String(guessRow) + String(guessCol);
+
+        if (!isValidAndNewGuess(guessRow, guessCol, this.guesses, boardSize)) {
+          continue;
+        }
+      }
+
+      madeValidGuess = true;
+      this.addGuess(guessStr);
+
+      for (let i = 0; i < playerShips.length; i++) {
+        const ship = playerShips[i];
+        
+        if (ship.hasLocation(guessStr)) {
+          const hitResult = ship.hit(guessStr);
+          
+          if (hitResult) {
+            // New hit
+            playerBoard.setCell(guessRow, guessCol, 'X');
+            console.log('CPU HIT at ' + guessStr + '!');
+            hit = true;
+
+            if (ship.isSunk()) {
+              console.log('CPU sunk your battleship!');
+              sunk = true;
+
+              this.#mode = 'hunt';
+              this.#targetQueue = [];
+            } else {
+              this.#mode = 'target';
+              this.#addAdjacentTargets(guessRow, guessCol, boardSize);
+            }
+          }
+          break;
+        }
+      }
+
+      if (!hit) {
+        playerBoard.setCell(guessRow, guessCol, 'O');
+        console.log('CPU MISS at ' + guessStr + '.');
+
+        if (this.#mode === 'target' && this.#targetQueue.length === 0) {
+          this.#mode = 'hunt';
+        }
+      }
+    }
+
+    return {
+      hit: hit,
+      sunk: sunk
+    };
+  }
+
+  // Helper method to add adjacent coordinates to target queue
+  #addAdjacentTargets(row, col, boardSize) {
+    const adjacent = [
+      { r: row - 1, c: col },
+      { r: row + 1, c: col },
+      { r: row, c: col - 1 },
+      { r: row, c: col + 1 },
+    ];
+
+    for (const adj of adjacent) {
+      if (isValidAndNewGuess(adj.r, adj.c, this.guesses, boardSize)) {
+        const adjStr = String(adj.r) + String(adj.c);
+        if (this.#targetQueue.indexOf(adjStr) === -1) {
+          this.#targetQueue.push(adjStr);
+        }
+      }
+    }
+  }
+}
+
 // === UTILITY FUNCTIONS ===
 
 // TESTABLE FUNCTION - accepts boardSize parameter
@@ -506,100 +615,6 @@ function processPlayerGuess(guess, boardSize, guesses, cpuShips, board, shipLeng
   return gameLogic.processHit(guess, boardSize, guesses, cpuShips, board, shipLength, 'player');
 }
 
-// TESTABLE FUNCTION - accepts AI state as parameters
-function cpuTurn(cpuMode, cpuTargetQueue, cpuGuesses, playerShips, playerBoard, boardSize, shipLength) {
-  console.log("\n--- CPU's Turn ---");
-  let guessRow, guessCol, guessStr;
-  let madeValidGuess = false;
-  let newCpuMode = cpuMode;
-  let newCpuTargetQueue = [...cpuTargetQueue]; // Create a copy to avoid mutation
-  let hit = false;
-  let sunk = false;
-
-  while (!madeValidGuess) {
-    if (newCpuMode === 'target' && newCpuTargetQueue.length > 0) {
-      guessStr = newCpuTargetQueue.shift();
-      guessRow = parseInt(guessStr[0]);
-      guessCol = parseInt(guessStr[1]);
-      console.log('CPU targets: ' + guessStr);
-
-      if (cpuGuesses.indexOf(guessStr) !== -1) {
-        if (newCpuTargetQueue.length === 0) newCpuMode = 'hunt';
-        continue;
-      }
-    } else {
-      newCpuMode = 'hunt';
-      guessRow = Math.floor(Math.random() * boardSize);
-      guessCol = Math.floor(Math.random() * boardSize);
-      guessStr = String(guessRow) + String(guessCol);
-
-      if (!isValidAndNewGuess(guessRow, guessCol, cpuGuesses, boardSize)) {
-        continue;
-      }
-    }
-
-    madeValidGuess = true;
-    cpuGuesses.push(guessStr);
-
-    for (let i = 0; i < playerShips.length; i++) {
-      const ship = playerShips[i];
-      
-      if (ship.hasLocation(guessStr)) {
-        const hitResult = ship.hit(guessStr);
-        
-        if (hitResult) {
-          // New hit
-          playerBoard.setCell(guessRow, guessCol, 'X');
-          console.log('CPU HIT at ' + guessStr + '!');
-          hit = true;
-
-          if (ship.isSunk()) {
-            console.log('CPU sunk your battleship!');
-            sunk = true;
-
-            newCpuMode = 'hunt';
-            newCpuTargetQueue = [];
-          } else {
-            newCpuMode = 'target';
-            const adjacent = [
-              { r: guessRow - 1, c: guessCol },
-              { r: guessRow + 1, c: guessCol },
-              { r: guessRow, c: guessCol - 1 },
-              { r: guessRow, c: guessCol + 1 },
-            ];
-            for (const adj of adjacent) {
-              if (isValidAndNewGuess(adj.r, adj.c, cpuGuesses, boardSize)) {
-                const adjStr = String(adj.r) + String(adj.c);
-
-                if (newCpuTargetQueue.indexOf(adjStr) === -1) {
-                  newCpuTargetQueue.push(adjStr);
-                }
-              }
-            }
-          }
-        }
-        break;
-      }
-    }
-
-    if (!hit) {
-      playerBoard.setCell(guessRow, guessCol, 'O');
-      console.log('CPU MISS at ' + guessStr + '.');
-
-      if (newCpuMode === 'target' && newCpuTargetQueue.length === 0) {
-        newCpuMode = 'hunt';
-      }
-    }
-  }
-
-  return {
-    newCpuMode: newCpuMode,
-    newCpuTargetQueue: newCpuTargetQueue,
-    hit: hit,
-    sunk: sunk
-  };
-}
-
 // TESTABLE FUNCTION - accepts game state as parameters
 function gameLoop(gameState, rl) {
   const gameLogic = new GameLogic();
@@ -636,19 +651,12 @@ function gameLoop(gameState, rl) {
         return;
       }
 
-      const cpuTurnResult = cpuTurn(
-        gameState.getCpuMode(), 
-        gameState.getCpuTargetQueue(), 
-        cpu.getGuesses(), 
-        player.getShips(), 
-        player.getBoard(), 
-        gameState.getBoardSize(), 
-        gameState.getShipLength()
+      console.log("\n--- CPU's Turn ---");
+      const cpuTurnResult = cpu.calculateNextMove(
+        player.getShips(),
+        player.getBoard(),
+        gameState.getBoardSize()
       );
-      
-      // Update AI state based on return value
-      gameState.setCpuMode(cpuTurnResult.newCpuMode);
-      gameState.setCpuTargetQueue(cpuTurnResult.newCpuTargetQueue);
       
       if (cpuTurnResult.sunk) {
         player.decrementNumShips();
@@ -672,12 +680,13 @@ module.exports = {
   GameLogic,
   Board,
   Ship,
+  Player,
+  AIPlayer,
   isValidAndNewGuess,
   isSunk,
   createBoard,
   placeShipsRandomly,
   processPlayerGuess,
-  cpuTurn,
   printBoard,
   gameLoop
 };
