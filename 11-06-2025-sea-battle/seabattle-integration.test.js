@@ -360,7 +360,7 @@ describe('Edge Cases from Requirements (EDGE-001 to EDGE-023)', () => {
       for (let i = 0; i < 10; i++) {
         for (let j = 0; j < 10; j++) {
           if ((i + j) % 2 === 0) {
-            cpu.addGuess(String(i) + String(j));
+            cpu.addGuess(`${i}${j}`);
           }
         }
       }

@@ -123,18 +123,16 @@ class GameLogic {
       col < 0 ||
       col >= boardSize
     ) {
-      if (display) display.showMessage(
-        'Oops, please enter valid row and column numbers between 0 and ' +
-          (boardSize - 1) +
-          '.',
+      display?.showMessage(
+        `Oops, please enter valid row and column numbers between 0 and ${boardSize - 1}.`,
       );
       return { success: false, hit: false, sunk: false };
     }
 
     const formattedGuess = guess;
 
-    if (guesses.indexOf(formattedGuess) !== -1) {
-      if (display) display.showMessage('You already guessed that location!');
+    if (guesses.includes(formattedGuess)) {
+      display?.showMessage('You already guessed that location!');
       return { success: false, hit: false, sunk: false };
     }
     guesses.push(formattedGuess);
@@ -153,28 +151,24 @@ class GameLogic {
           board.setCell(row, col, 'X');
           
           // Player-specific messages
-          if (display) {
-            if (playerType === 'player') {
-              display.showMessage('PLAYER HIT!');
-            } else {
-              display.showMessage('HIT!');
-            }
+          if (playerType === 'player') {
+            display?.showMessage('PLAYER HIT!');
+          } else {
+            display?.showMessage('HIT!');
           }
           hit = true;
 
           if (ship.isSunk()) {
-            if (display) {
-              if (playerType === 'player') {
-                display.showMessage('You sunk an enemy battleship!');
-              } else {
-                display.showMessage('You sunk a battleship!');
-              }
+            if (playerType === 'player') {
+              display?.showMessage('You sunk an enemy battleship!');
+            } else {
+              display?.showMessage('You sunk a battleship!');
             }
             sunk = true;
           }
         } else {
           // Already hit this location
-          if (display) display.showMessage('You already hit that spot!');
+          display?.showMessage('You already hit that spot!');
           hit = true;
         }
         break;
@@ -183,12 +177,10 @@ class GameLogic {
 
     if (!hit) {
       board.setCell(row, col, 'O');
-      if (display) {
-        if (playerType === 'player') {
-          display.showMessage('PLAYER MISS.');
-        } else {
-          display.showMessage('MISS.');
-        }
+      if (playerType === 'player') {
+        display?.showMessage('PLAYER MISS.');
+      } else {
+        display?.showMessage('MISS.');
       }
     }
 
@@ -215,8 +207,8 @@ class Ship {
   #hits;
   #length;
 
-  constructor(locations) {
-    if (!locations || !Array.isArray(locations) || locations.length === 0) {
+  constructor(locations = []) {
+    if (!Array.isArray(locations) || locations.length === 0) {
       throw new Error('Ship locations must be a non-empty array');
     }
     
@@ -358,9 +350,9 @@ class AIPlayer extends Player {
         guessStr = this.#targetQueue.shift();
         guessRow = parseInt(guessStr[0]);
         guessCol = parseInt(guessStr[1]);
-        if (display) display.showMessage('CPU targets: ' + guessStr);
+        display?.showMessage(`CPU targets: ${guessStr}`);
 
-        if (this.guesses.indexOf(guessStr) !== -1) {
+        if (this.guesses.includes(guessStr)) {
           if (this.#targetQueue.length === 0) this.#mode = 'hunt';
           continue;
         }
@@ -387,11 +379,11 @@ class AIPlayer extends Player {
           if (hitResult) {
             // New hit
             playerBoard.setCell(guessRow, guessCol, 'X');
-            if (display) display.showMessage('CPU HIT at ' + guessStr + '!');
+            display?.showMessage(`CPU HIT at ${guessStr}!`);
             hit = true;
 
             if (ship.isSunk()) {
-              if (display) display.showMessage('CPU sunk your battleship!');
+              display?.showMessage('CPU sunk your battleship!');
               sunk = true;
 
               this.#mode = 'hunt';
@@ -407,7 +399,7 @@ class AIPlayer extends Player {
 
       if (!hit) {
         playerBoard.setCell(guessRow, guessCol, 'O');
-        if (display) display.showMessage('CPU MISS at ' + guessStr + '.');
+        display?.showMessage(`CPU MISS at ${guessStr}.`);
 
         if (this.#mode === 'target' && this.#targetQueue.length === 0) {
           this.#mode = 'hunt';
@@ -432,8 +424,8 @@ class AIPlayer extends Player {
 
     for (const adj of adjacent) {
       if (Board.isValidAndNewGuess(adj.r, adj.c, this.guesses, boardSize)) {
-        const adjStr = String(adj.r) + String(adj.c);
-        if (this.#targetQueue.indexOf(adjStr) === -1) {
+        const adjStr = `${adj.r}${adj.c}`;
+        if (!this.#targetQueue.includes(adjStr)) {
           this.#targetQueue.push(adjStr);
         }
       }
@@ -509,18 +501,23 @@ class SeaBattleGame {
 
   cpuTurn() {
     this.display.showMessage("\n--- CPU's Turn ---");
-    const result = this.gameState.getCpu().calculateNextMove(
-        this.gameState.getPlayer().getShips(),
-        this.gameState.getPlayer().getBoard(),
-        this.gameState.getBoardSize(),
+    const {
+        player,
+        cpu,
+        boardSize
+    } = this.gameState;
+    const result = cpu.calculateNextMove(
+        player.getShips(),
+        player.getBoard(),
+        boardSize,
         this.display
     );
 
     if (result.sunk) {
-        this.gameState.getPlayer().decrementNumShips();
+        player.decrementNumShips();
     }
     
-    this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+    this.display.renderBoards(cpu.getBoard(), player.getBoard());
   }
   
   endGame() {

@@ -235,7 +235,7 @@ describe('Edge Cases from Requirements', () => {
   test('should handle large guess histories efficiently', () => {
     const largeGuessList = [];
     for (let i = 0; i < 100; i++) {
-      largeGuessList.push(`${i % 10}${Math.floor(i / 10) % 10}`);
+      largeGuessList.push(`${i % 10}${Math.floor(i / 10)}`);
     }
     
     const start = Date.now();
@@ -293,8 +293,8 @@ describe('Board Class', () => {
   });
 
   test('should throw error for invalid coordinates', () => {
-    expect(() => board.getCell(-1, 0)).toThrow('Invalid coordinates: -1, 0');
-    expect(() => board.setCell(10, 0, 'X')).toThrow('Invalid coordinates: 10, 0');
+    expect(() => board.getCell(-1, 0)).toThrow(`Invalid coordinates: -1, 0`);
+    expect(() => board.setCell(10, 0, 'X')).toThrow(`Invalid coordinates: 10, 0`);
   });
 
   test('should clear board correctly', () => {

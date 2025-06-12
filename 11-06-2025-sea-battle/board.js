@@ -71,22 +71,22 @@ class Board {
     // Header with column numbers
     let header = '  ';
     for (let h = 0; h < this.#size; h++) {
-      header += h + ' ';
+      header += `${h} `;
     }
-    output += header + '\n';
+    output += `${header}\n`;
 
     // Board rows
     for (let i = 0; i < this.#size; i++) {
-      let rowStr = i + ' ';
+      let rowStr = `${i} `;
       for (let j = 0; j < this.#size; j++) {
         let cellValue = this.#boardArray[i][j];
         // Hide ships if showShips is false
         if (!showShips && cellValue === 'S') {
           cellValue = '~';
         }
-        rowStr += cellValue + ' ';
+        rowStr += `${cellValue} `;
       }
-      output += rowStr + '\n';
+      output += `${rowStr}\n`;
     }
     
     return output;
@@ -99,28 +99,28 @@ class Board {
     
     // Header
     let header = '  ';
-    for (let h = 0; h < size; h++) header += h + ' ';
-    output += header + '     ' + header + '\n';
+    for (let h = 0; h < size; h++) header += `${h} `;
+    output += `${header}     ${header}\n`;
 
     // Board rows
     for (let i = 0; i < size; i++) {
-      let rowStr = i + ' ';
+      let rowStr = `${i} `;
 
       // Opponent board (hide ships)
       for (let j = 0; j < size; j++) {
         let cellValue = opponentBoard.getCell(i, j);
         if (cellValue === 'S') cellValue = '~'; // Hide opponent ships
-        rowStr += cellValue + ' ';
+        rowStr += `${cellValue} `;
       }
       
-      rowStr += '    ' + i + ' ';
+      rowStr += `    ${i} `;
 
       // Player board (show ships)
       for (let j = 0; j < size; j++) {
-        rowStr += playerBoard.getCell(i, j) + ' ';
+        rowStr += `${playerBoard.getCell(i, j)} `;
       }
       
-      output += rowStr + '\n';
+      output += `${rowStr}\n`;
     }
     
     return output;
@@ -130,8 +130,8 @@ class Board {
     if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
       return false;
     }
-    const guessStr = String(row) + String(col);
-    return guessList.indexOf(guessStr) === -1;
+    const guessStr = `${row}${col}`;
+    return !guessList.includes(guessStr);
   }
 }
 
