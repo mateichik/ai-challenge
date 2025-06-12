@@ -21,6 +21,9 @@ console.log = () => {};
 console.clear = () => {};
 console.error = () => {};
 
+// Store original readline.createInterface
+const originalCreateInterface = readline.createInterface;
+
 // Mock readline for InputHandler
 const mockReadline = {
   createInterface: () => ({
@@ -52,6 +55,9 @@ test('Game Integration Tests', async (t) => {
     player = gameState.getPlayer();
     cpu = gameState.getCpu();
     display = game.display;
+    
+    // Replace the real InputHandler with our mock
+    game.inputHandler = new MockInputHandler();
   });
 
   t.afterEach(() => {
@@ -59,12 +65,22 @@ test('Game Integration Tests', async (t) => {
       game.inputHandler.close();
     }
   });
+  
+  // Restore original readline after all tests
+  t.after(() => {
+    readline.createInterface = originalCreateInterface;
+  });
 
   await t.test('should display welcome message on start', async () => {
     let welcomeMessageShown = false;
     display.showWelcome = () => {
       welcomeMessageShown = true;
     };
+    
+    // Mock game methods to avoid hanging
+    game.initializeGame = async () => {};
+    game.gameLoop = async () => {};
+    game.endGame = () => {};
 
     await game.playGame();
     assert.equal(welcomeMessageShown, true, 'Welcome message should be shown when starting the game');

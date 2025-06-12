@@ -8,9 +8,15 @@ class GameLogic {
 
   // Move ship placement logic from placeShipsRandomly function
   placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard) {
+    // Clear existing ships array
+    shipsArray.length = 0;
+    
     let placedShips = 0;
     let attempts = 0;
     const maxAttempts = boardSize * boardSize * 10; // Safeguard against infinite loops
+
+    // Create a tracking grid to check for collisions more reliably
+    const occupiedCells = Array(boardSize).fill().map(() => Array(boardSize).fill(false));
 
     while (placedShips < numberOfShips && attempts < maxAttempts) {
       const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
@@ -41,7 +47,8 @@ class GameLogic {
           break;
         }
 
-        if (targetBoard.getCell(checkRow, checkCol) !== '~') {
+        // Check both the board state and our tracking grid
+        if (targetBoard.getCell(checkRow, checkCol) !== '~' || occupiedCells[checkRow][checkCol]) {
           collision = true;
           break;
         }
@@ -59,6 +66,9 @@ class GameLogic {
           }
           const locationStr = String(placeRow) + String(placeCol);
           shipLocations.push(locationStr);
+
+          // Mark as occupied in our tracking grid
+          occupiedCells[placeRow][placeCol] = true;
 
           if (targetBoard === playerBoard) {
             targetBoard.setCell(placeRow, placeCol, 'S');

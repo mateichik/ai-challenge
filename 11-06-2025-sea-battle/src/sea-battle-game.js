@@ -13,7 +13,20 @@ class SeaBattleGame {
   }
 
   async playGame() {
-    this.display.showWelcome();
+    try {
+      this.display.showWelcome();
+      await this.initializeGame();
+      await this.gameLoop();
+      this.endGame();
+    } catch (error) {
+      this.display.showMessage(`An error occurred: ${error.message}`);
+      console.error('Game error:', error);
+    } finally {
+      this.inputHandler.close();
+    }
+  }
+
+  async initializeGame() {
     const boards = createBoard(this.gameState.getBoardSize());
     this.gameState.getPlayer().setBoard(boards.playerBoardObject);
     this.gameState.getCpu().setBoard(boards.opponentBoardObject);
@@ -24,57 +37,75 @@ class SeaBattleGame {
     this.display.showMessage('CPU ships placed.');
     
     this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+  }
 
+  async gameLoop() {
     while (!this.gameState.isGameOver()) {
-      await this.playerTurn();
-      if (this.gameState.isGameOver()) break;
-      this.cpuTurn();
+      try {
+        await this.playerTurn();
+        if (this.gameState.isGameOver()) break;
+        await this.cpuTurn();
+      } catch (error) {
+        this.display.showMessage(`Turn error: ${error.message}`);
+        console.error('Turn error:', error);
+      }
     }
-    
-    this.endGame();
-    this.inputHandler.close();
   }
 
   async playerTurn() {
-    let guess = await this.inputHandler.getPlayerGuess();
+    try {
+      let guess = await this.inputHandler.getPlayerGuess();
 
-    const result = this.gameLogic.processHit(
-        guess,
-        this.gameState.getBoardSize(),
-        this.gameState.getPlayer().getGuesses(),
-        this.gameState.getCpu().getShips(),
-        this.gameState.getCpu().getBoard(),
-        this.gameState.getShipLength(),
-        'player',
-        this.display
-    );
-    
-    if (result.sunk) {
-        this.gameState.getCpu().decrementNumShips();
+      const result = this.gameLogic.processHit(
+          guess,
+          this.gameState.getBoardSize(),
+          this.gameState.getPlayer().getGuesses(),
+          this.gameState.getCpu().getShips(),
+          this.gameState.getCpu().getBoard(),
+          this.gameState.getShipLength(),
+          'player',
+          this.display
+      );
+      
+      if (result.sunk) {
+          this.gameState.getCpu().decrementNumShips();
+      }
+      
+      this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+    } catch (error) {
+      this.display.showMessage(`Player turn error: ${error.message}`);
+      throw error; // Re-throw to be handled by game loop
     }
-    
-    this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
   }
 
-  cpuTurn() {
-    this.display.showMessage("\n--- CPU's Turn ---");
-    const {
-        player,
-        cpu,
-        boardSize
-    } = this.gameState;
-    const result = cpu.calculateNextMove(
-        player.getShips(),
-        player.getBoard(),
-        boardSize,
-        this.display
-    );
+  async cpuTurn() {
+    try {
+      this.display.showMessage("\n--- CPU's Turn ---");
+      const {
+          player,
+          cpu,
+          boardSize
+      } = this.gameState;
+      
+      // Simulate CPU "thinking" time with a small delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const result = cpu.calculateNextMove(
+          player.getShips(),
+          player.getBoard(),
+          boardSize,
+          this.display
+      );
 
-    if (result.sunk) {
-        player.decrementNumShips();
+      if (result.sunk) {
+          player.decrementNumShips();
+      }
+      
+      this.display.renderBoards(cpu.getBoard(), player.getBoard());
+    } catch (error) {
+      this.display.showMessage(`CPU turn error: ${error.message}`);
+      throw error; // Re-throw to be handled by game loop
     }
-    
-    this.display.renderBoards(cpu.getBoard(), player.getBoard());
   }
   
   endGame() {

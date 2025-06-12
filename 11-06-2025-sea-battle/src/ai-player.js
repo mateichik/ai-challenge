@@ -29,6 +29,11 @@ class AIPlayer extends Player {
     let hit = false;
     let sunk = false;
 
+    // Check if we need to switch to hunt mode at the beginning
+    if (this.#mode === 'target' && this.#targetQueue.length === 0) {
+      this.#mode = 'hunt';
+    }
+
     while (!madeValidGuess) {
       if (this.#mode === 'target' && this.#targetQueue.length > 0) {
         guessStr = this.#targetQueue.shift();
@@ -37,7 +42,10 @@ class AIPlayer extends Player {
         display?.showMessage(`CPU targets: ${guessStr}`);
 
         if (this.guesses.includes(guessStr)) {
-          if (this.#targetQueue.length === 0) this.#mode = 'hunt';
+          // If the queue is empty after removing this invalid guess, switch to hunt mode
+          if (this.#targetQueue.length === 0) {
+            this.#mode = 'hunt';
+          }
           continue;
         }
       } else {
@@ -85,6 +93,7 @@ class AIPlayer extends Player {
         playerBoard.setCell(guessRow, guessCol, 'O');
         display?.showMessage(`CPU MISS at ${guessStr}.`);
 
+        // Check again if we need to switch to hunt mode
         if (this.#mode === 'target' && this.#targetQueue.length === 0) {
           this.#mode = 'hunt';
         }

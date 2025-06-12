@@ -115,15 +115,22 @@ test('AI Player Tests', async (t) => {
   
   // EDGE-015: CPU target queue becomes empty while in target mode
   await t.test('should switch to hunt mode if target queue becomes empty', () => {
-    // Set mode to target but with empty queue
-    cpu.setMode('target');
-    cpu.setTargetQueue([]);
+    // Create a fresh AI player
+    const testCpu = new AIPlayer();
     
-    // Make a move - should switch to hunt mode
-    cpu.calculateNextMove(playerShips, playerBoard, 10, display);
+    // Explicitly set mode to target with empty queue
+    testCpu.setMode('target');
+    testCpu.setTargetQueue([]);
+    
+    // Create a board that won't cause any hits
+    const emptyBoard = new Board(10);
+    const emptyShips = [];
+    
+    // Force a move calculation - this should switch to hunt mode
+    testCpu.calculateNextMove(emptyShips, emptyBoard, 10, display);
     
     // Verify mode switched to hunt
-    assert.equal(cpu.getMode(), 'hunt');
+    assert.equal(testCpu.getMode(), 'hunt', 'AI should switch to hunt mode when target queue is empty');
   });
   
   // EDGE-016, EDGE-017: CPU hits ship at board edges or corner
