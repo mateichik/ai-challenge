@@ -12,22 +12,32 @@ import {
   createBoard,
   SeaBattleGame
 } from '../seabattle.js';
-import { Board } from '../board.js';
-import { GameDisplay } from '../game-display.js';
-import { InputHandler } from '../input-handler.js';
+import { Board } from '../src/board.js';
+import { GameDisplay } from '../src/game-display.js';
+import { InputHandler } from '../src/input-handler.js';
 
 // Mock console methods
 console.log = () => {};
+console.clear = () => {};
 console.error = () => {};
 
-// Mock readline for tests
+// Mock readline for InputHandler
 const mockReadline = {
   createInterface: () => ({
-    question: (_, callback) => callback('00'),
+    question: (query, callback) => callback('00'),
     close: () => {}
   })
 };
+
+// Override readline.createInterface with mock
 readline.createInterface = mockReadline.createInterface;
+
+// Mock InputHandler for tests that require user input
+class MockInputHandler {
+  constructor() {}
+  async getPlayerGuess() { return '00'; }
+  close() {}
+}
 
 test('Game Integration Tests', async (t) => {
   let game;

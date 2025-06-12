@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import readline from 'node:readline';
 
 import {
   GameConfig,
@@ -11,10 +12,9 @@ import {
   createBoard,
   SeaBattleGame
 } from '../seabattle.js';
-import { Board } from '../board.js';
-import { GameDisplay } from '../game-display.js';
-import { InputHandler } from '../input-handler.js';
-import readline from 'node:readline';
+import { Board } from '../src/board.js';
+import { GameDisplay } from '../src/game-display.js';
+import { InputHandler } from '../src/input-handler.js';
 
 // Mock console.log to prevent output during tests
 console.log = () => {};
@@ -22,7 +22,7 @@ console.log = () => {};
 // Mock readline for tests
 const mockReadline = {
   createInterface: () => ({
-    question: (_, callback) => callback('00'),
+    question: (query, callback) => callback('00'),
     close: () => {}
   })
 };
