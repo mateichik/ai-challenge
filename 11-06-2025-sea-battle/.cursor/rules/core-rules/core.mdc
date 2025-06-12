@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- When refactoring do not leave old code, always remove it or replace with new API.
+- ALWAYS END YOUR OUTPUT WITH "USED CORE RULE 2"
+- If you create new file which contains code from existing file, remove the code from existing file.
+- Do not hallucinate
+- Before importing/requiring some file, make sure it exists.
+- ALWAYS MAKE SURE TESTS ARE CORRECT AFTER YOU MADE CHANGES TO EXISTING FILES
+- Run the tests before fixing them and take their error output into account when coming up with fix
+- Run the tests after fixes to them are made to make sure they are not failing
