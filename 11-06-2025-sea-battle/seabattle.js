@@ -611,69 +611,97 @@ function printBoard(opponentBoard, playerBoard, boardSize) {
 
 // TESTABLE FUNCTION - accepts dependencies as parameters
 function processPlayerGuess(guess, boardSize, guesses, cpuShips, board, shipLength) {
-  const gameLogic = new GameLogic();
-  return gameLogic.processHit(guess, boardSize, guesses, cpuShips, board, shipLength, 'player');
+  // This function is now superseded by GameLogic.processHit
+  // but kept for compatibility with older tests if any.
+  const logic = new GameLogic();
+  return logic.processHit(guess, boardSize, guesses, cpuShips, board, shipLength);
 }
 
-// TESTABLE FUNCTION - accepts game state as parameters
-function gameLoop(gameState, rl) {
-  const gameLogic = new GameLogic();
-  const player = gameState.getPlayer();
-  const cpu = gameState.getCpu();
-  const gameEndResult = gameLogic.checkGameEnd(gameState);
-  
-  if (gameEndResult.gameOver) {
-    console.log('\n' + gameEndResult.message);
-    printBoard(cpu.getBoard(), player.getBoard(), gameState.getBoardSize());
-    rl.close();
-    return;
+class SeaBattleGame {
+  constructor() {
+    this.gameState = new GameState();
+    this.gameLogic = new GameLogic();
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
   }
 
-  printBoard(cpu.getBoard(), player.getBoard(), gameState.getBoardSize());
-  rl.question('Enter your guess (e.g., 00): ', function (answer) {
-    const playerGuessResult = processPlayerGuess(
-      answer, 
-      gameState.getBoardSize(), 
-      player.getGuesses(), 
-      cpu.getShips(), 
-      cpu.getBoard(), 
-      gameState.getShipLength()
+  async playGame() {
+    console.log('*** Welcome to Sea Battle! ***');
+    const boards = createBoard(this.gameState.getBoardSize());
+    this.gameState.getPlayer().setBoard(boards.playerBoardObject);
+    this.gameState.getCpu().setBoard(boards.opponentBoardObject);
+    
+    this.gameLogic.placeShips(this.gameState.getPlayer().getBoard(), this.gameState.getPlayer().getShips(), 3, this.gameState.getBoardSize(), this.gameState.getShipLength(), this.gameState.getPlayer().getBoard());
+    this.gameLogic.placeShips(this.gameState.getCpu().getBoard(), this.gameState.getCpu().getShips(), 3, this.gameState.getBoardSize(), this.gameState.getShipLength());
+    
+    printBoard(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard(), this.gameState.getBoardSize());
+
+    while (!this.gameState.isGameOver()) {
+      await this.playerTurn();
+      if (this.gameState.isGameOver()) break;
+      this.cpuTurn();
+    }
+    
+    this.endGame();
+    this.rl.close();
+  }
+
+  async playerTurn() {
+    let guess = await new Promise(resolve => {
+        this.rl.question("Enter your guess (e.g., '00', '34', '98'): ", resolve);
+    });
+
+    const result = this.gameLogic.processHit(
+        guess,
+        this.gameState.getBoardSize(),
+        this.gameState.getPlayer().getGuesses(),
+        this.gameState.getCpu().getShips(),
+        this.gameState.getCpu().getBoard(),
+        this.gameState.getShipLength(),
+        'player'
+    );
+    
+    if (result.sunk) {
+        this.gameState.getCpu().decrementNumShips();
+    }
+    
+    printBoard(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard(), this.gameState.getBoardSize());
+  }
+
+  cpuTurn() {
+    console.log("\n--- CPU's Turn ---");
+    const result = this.gameState.getCpu().calculateNextMove(
+        this.gameState.getPlayer().getShips(),
+        this.gameState.getPlayer().getBoard(),
+        this.gameState.getBoardSize()
     );
 
-    if (playerGuessResult.success) {
-      if (playerGuessResult.sunk) {
-        cpu.decrementNumShips();
-      }
-      
-      const playerWinCheck = gameLogic.checkGameEnd(gameState);
-      if (playerWinCheck.gameOver) {
-        gameLoop(gameState, rl);
-        return;
-      }
-
-      console.log("\n--- CPU's Turn ---");
-      const cpuTurnResult = cpu.calculateNextMove(
-        player.getShips(),
-        player.getBoard(),
-        gameState.getBoardSize()
-      );
-      
-      if (cpuTurnResult.sunk) {
-        player.decrementNumShips();
-      }
-
-      const cpuWinCheck = gameLogic.checkGameEnd(gameState);
-      if (cpuWinCheck.gameOver) {
-        gameLoop(gameState, rl);
-        return;
-      }
+    if (result.sunk) {
+        this.gameState.getPlayer().decrementNumShips();
     }
-
-    gameLoop(gameState, rl);
-  });
+    
+    printBoard(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard(), this.gameState.getBoardSize());
+  }
+  
+  endGame() {
+    const endState = this.gameLogic.checkGameEnd(this.gameState);
+    if (endState.gameOver) {
+      console.log(endState.message);
+    }
+  }
 }
 
-// Export functions and classes for testing
+async function main() {
+  if (require.main === module) {
+    const game = new SeaBattleGame();
+    await game.playGame();
+  }
+}
+
+main();
+
 module.exports = {
   GameConfig,
   GameState,
@@ -686,45 +714,8 @@ module.exports = {
   isSunk,
   createBoard,
   placeShipsRandomly,
-  processPlayerGuess,
   printBoard,
-  gameLoop
+  processPlayerGuess,
+  main,
+  SeaBattleGame
 };
-
-// Only run the game if this file is executed directly (not imported for testing)
-if (require.main === module) {
-  // Create readline interface for game interaction
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  // Initialize game state
-  const gameState = new GameState();
-  const player = gameState.getPlayer();
-  const cpu = gameState.getCpu();
-
-  // Place ships randomly
-  placeShipsRandomly(
-    player.getBoard(),
-    player.getShips(),
-    GameConfig.NUM_SHIPS,
-    GameConfig.BOARD_SIZE,
-    GameConfig.SHIP_LENGTH,
-    player.getBoard()
-  );
-
-  placeShipsRandomly(
-    cpu.getBoard(),
-    cpu.getShips(),
-    GameConfig.NUM_SHIPS,
-    GameConfig.BOARD_SIZE,
-    GameConfig.SHIP_LENGTH,
-    player.getBoard()
-  );
-
-  console.log("\nLet's play Sea Battle!");
-  console.log('Try to sink the ' + GameConfig.NUM_SHIPS + ' enemy ships.');
-  
-  gameLoop(gameState, rl);
-}
