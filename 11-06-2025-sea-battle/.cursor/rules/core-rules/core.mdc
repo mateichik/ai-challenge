@@ -5,7 +5,7 @@ alwaysApply: true
 ---
 - When refactoring do not leave old code, always remove it or replace with new API. Do not create parallel versions of features doing the same.
 - Try to keep the modification scope as narrow as possible, close to what was asked. Ask before modifying logic that is not directly related to the task you were given.
-- ALWAYS END YOUR OUTPUT WITH "USED CORE RULE 4"
+- ALWAYS END YOUR OUTPUT WITH "USED CORE RULE 5"
 - If you create new file which contains code from existing file, remove the code from existing file.
 - Do not hallucinate
 - Before importing/requiring some file, make sure it exists.
@@ -13,3 +13,4 @@ alwaysApply: true
 - Run the tests before fixing them and take their error output into account when coming up with fix
 - Run the tests after fixes to them are made to make sure they are not failing
 - If you are unable to run the tests using standard commands, do not create custom test runner scripts
+- Before creating files or directories in terminal, verify that you are in correct directory 11-06-2025-sea-battle of root project. Do not create nested directory with the same name.
