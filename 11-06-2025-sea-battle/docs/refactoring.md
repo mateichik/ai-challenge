@@ -383,7 +383,7 @@
 
 ### Code Quality Metrics
 - Zero global variables
-- 100% unit test coverage
+- <del>100% unit test coverage</del>
 - Zero linting errors
 - All requirements.md items satisfied
 
