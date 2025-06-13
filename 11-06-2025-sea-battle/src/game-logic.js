@@ -39,6 +39,55 @@ class GameLogic {
   }
 
   /**
+   * Generates a potential ship placement with a random orientation and starting position.
+   * @private
+   * @param {number} boardSize - The size of the game board.
+   * @param {number} shipLength - The length of the ship.
+   * @returns {{orientation: string, startRow: number, startCol: number}} An object containing the ship's orientation and coordinates.
+   */
+  _generateRandomShip(boardSize, shipLength) {
+    const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+    let startRow, startCol;
+
+    if (orientation === 'horizontal') {
+      startRow = Math.floor(Math.random() * boardSize);
+      startCol = Math.floor(Math.random() * (boardSize - shipLength + 1));
+    } else {
+      startRow = Math.floor(Math.random() * (boardSize - shipLength + 1));
+      startCol = Math.floor(Math.random() * boardSize);
+    }
+    return { orientation, startRow, startCol };
+  }
+
+  /**
+   * Checks if a potential ship placement conflicts with existing ships or board boundaries.
+   * @private
+   * @param {{orientation: string, startRow: number, startCol: number}} shipData - The generated ship's data.
+   * @param {number} shipLength - The length of the ship.
+   * @param {number} boardSize - The size of the game board.
+   * @param {Board} targetBoard - The board to check for collisions.
+   * @returns {boolean} True if a collision is detected, false otherwise.
+   */
+  _hasCollision({ orientation, startRow, startCol }, shipLength, boardSize, targetBoard) {
+    for (let i = 0; i < shipLength; i++) {
+      const checkRow = orientation === 'vertical' ? startRow + i : startRow;
+      const checkCol = orientation === 'horizontal' ? startCol + i : startCol;
+
+      // This check is slightly redundant due to how startRow/startCol are generated, but it's a good safeguard.
+      if (checkRow >= boardSize || checkCol >= boardSize) {
+        return true;
+      }
+      
+      // Check if the cell is already occupied on our placement grid or on the actual board.
+      // The _occupiedCells grid is crucial for preventing overlaps within this placement transaction.
+      if (this._occupiedCells[checkRow][checkCol] || targetBoard.getCell(checkRow, checkCol) !== '~') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Places the specified number of ships randomly on the game board, ensuring they do not overlap.
    * @param {Board} targetBoard - The board on which to place the ships.
    * @param {Array<Ship>} shipsArray - The array to store the created Ship objects.
@@ -65,8 +114,9 @@ class GameLogic {
     let attempts = 0;
     const maxAttempts = boardSize * boardSize * 10; // Safeguard against infinite loops
 
-    // Create a tracking grid to check for collisions more reliably
-    // Reuse existing array if possible to reduce memory allocation
+    // This tracking grid is used to check for collisions between ships placed in this
+    // *same* transaction, before they are officially added to the board state.
+    // It's reset for each call to placeShips.
     if (!this._occupiedCells || this._occupiedCells.length !== boardSize) {
       this._occupiedCells = Array(boardSize).fill().map(() => Array(boardSize).fill(false));
     } else {
@@ -76,70 +126,31 @@ class GameLogic {
       }
     }
 
-    // Reuse ship locations array to reduce allocations in the loop
-    const shipLocations = [];
-    
     while (placedShips < numberOfShips && attempts < maxAttempts) {
-      const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
-      let startRow, startCol;
-      let collision = false;
       attempts++;
+      const potentialShip = this._generateRandomShip(boardSize, shipLength);
+      const hasCollision = this._hasCollision(potentialShip, shipLength, boardSize, targetBoard);
 
-      if (orientation === 'horizontal') {
-        startRow = Math.floor(Math.random() * boardSize);
-        startCol = Math.floor(Math.random() * (boardSize - shipLength + 1));
-      } else {
-        startRow = Math.floor(Math.random() * (boardSize - shipLength + 1));
-        startCol = Math.floor(Math.random() * boardSize);
-      }
-
-      // Check for collisions
-      for (let i = 0; i < shipLength; i++) {
-        let checkRow = startRow;
-        let checkCol = startCol;
-        if (orientation === 'horizontal') {
-          checkCol += i;
-        } else {
-          checkRow += i;
-        }
-
-        if (checkRow >= boardSize || checkCol >= boardSize) {
-          collision = true;
-          break;
-        }
-
-        // Check both the board state and our tracking grid
-        if (targetBoard.getCell(checkRow, checkCol) !== '~' || this._occupiedCells[checkRow][checkCol]) {
-          collision = true;
-          break;
-        }
-      }
-
-      if (!collision) {
-        // Clear previous locations
-        shipLocations.length = 0;
+      if (!hasCollision) {
+        const { orientation, startRow, startCol } = potentialShip;
+        const shipLocations = [];
         
         for (let i = 0; i < shipLength; i++) {
-          let placeRow = startRow;
-          let placeCol = startCol;
-          if (orientation === 'horizontal') {
-            placeCol += i;
-          } else {
-            placeRow += i;
-          }
-          const locationStr = String(placeRow) + String(placeCol);
-          shipLocations.push(locationStr);
+          const placeRow = orientation === 'vertical' ? startRow + i : startRow;
+          const placeCol = orientation === 'horizontal' ? startCol + i : startCol;
+          
+          shipLocations.push(String(placeRow) + String(placeCol));
 
-          // Mark as occupied in our tracking grid
+          // Mark as occupied in our temporary placement grid
           this._occupiedCells[placeRow][placeCol] = true;
 
+          // If this is the player's primary board, mark the ship as visible.
           if (targetBoard === playerBoard) {
             targetBoard.setCell(placeRow, placeCol, 'S');
           }
         }
         
-        // Create Ship object instead of plain object
-        // Clone the locations array to avoid reference issues
+        // Create a new Ship object with a copy of the locations to avoid reference issues.
         const newShip = new Ship([...shipLocations]);
         shipsArray.push(newShip);
         placedShips++;
@@ -156,6 +167,62 @@ class GameLogic {
     this._shipPlacementResult.attempts = attempts;
     
     return this._shipPlacementResult;
+  }
+
+  /**
+   * Validates a guess and parses it into row and column numbers.
+   * @private
+   * @param {string} guess - The user's guess string.
+   * @param {number} boardSize - The size of the board.
+   * @param {Array<string>} previousGuesses - The list of previous guesses.
+   * @returns {{row: number, col: number}} The parsed coordinates.
+   */
+  _validateAndParseGuess(guess, boardSize, previousGuesses) {
+    if (typeof guess !== 'string' || guess.length !== 2) {
+      throw new InvalidCoordinateError(guess, boardSize);
+    }
+    
+    const row = parseInt(guess[0]);
+    const col = parseInt(guess[1]);
+
+    if (isNaN(row) || isNaN(col) || row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
+      throw new InvalidCoordinateError(guess, boardSize);
+    }
+    
+    if (previousGuesses.includes(guess)) {
+      throw new DuplicateGuessError(guess);
+    }
+
+    return { row, col };
+  }
+
+  /**
+   * Handles the logic for when a guess results in a successful hit on a ship.
+   * @private
+   * @param {{row: number, col: number}} coords - The coordinates of the hit.
+   * @param {Ship} ship - The ship that was hit.
+   * @param {string} playerType - The type of player ('player' or 'cpu').
+   * @param {Board} board - The board to update.
+   * @param {GameDisplay} display - The display for showing messages.
+   */
+  _handleHit({ row, col }, ship, playerType, board, display) {
+    const wasAlreadyHit = !ship.hit(String(row) + String(col));
+    
+    if (wasAlreadyHit) {
+      display?.showMessage(this._messages.alreadyHit);
+      this._hitResult.hit = true; // It's still a "hit" on the location.
+      return;
+    }
+
+    // It's a new hit.
+    board.setCell(row, col, 'X');
+    display?.showMessage(playerType === 'player' ? this._messages.playerHit : this._messages.hit);
+    this._hitResult.hit = true;
+
+    if (ship.isSunk()) {
+      display?.showMessage(playerType === 'player' ? this._messages.sunkEnemy : this._messages.sunkGeneric);
+      this._hitResult.sunk = true;
+    }
   }
 
   /**
@@ -182,75 +249,24 @@ class GameLogic {
     validateArray(guesses, 'guesses');
     validateArray(ships, 'ships');
     
-    if (typeof guess !== 'string' || guess.length !== 2) {
-      throw new InvalidCoordinateError(guess, boardSize);
-    }
+    const { row, col } = this._validateAndParseGuess(guess, boardSize, guesses);
+    guesses.push(guess);
 
-    const row = parseInt(guess[0]);
-    const col = parseInt(guess[1]);
-
-    // Validate coordinates
-    if (isNaN(row) || isNaN(col) || row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
-      throw new InvalidCoordinateError(guess, boardSize);
-    }
-
-    const formattedGuess = guess;
-
-    // Check for duplicate guess
-    if (guesses.includes(formattedGuess)) {
-      throw new DuplicateGuessError(formattedGuess);
-    }
-    
-    guesses.push(formattedGuess);
-
-    // Reset result object
+    // Reset result object for this turn
     this._hitResult.hit = false;
     this._hitResult.sunk = false;
     this._hitResult.success = true;
 
-    // Cache ship count for performance
-    const shipCount = ships.length;
-    for (let i = 0; i < shipCount; i++) {
-      const ship = ships[i];
-      
-      if (ship.hasLocation(formattedGuess)) {
-        const hitResult = ship.hit(formattedGuess);
-        
-        if (hitResult) {
-          // New hit
-          board.setCell(row, col, 'X');
-          
-          // Player-specific messages - use cached messages
-          if (playerType === 'player') {
-            display?.showMessage(this._messages.playerHit);
-          } else {
-            display?.showMessage(this._messages.hit);
-          }
-          this._hitResult.hit = true;
-
-          if (ship.isSunk()) {
-            if (playerType === 'player') {
-              display?.showMessage(this._messages.sunkEnemy);
-            } else {
-              display?.showMessage(this._messages.sunkGeneric);
-            }
-            this._hitResult.sunk = true;
-          }
-        } else {
-          // Already hit this location
-          display?.showMessage(this._messages.alreadyHit);
-          this._hitResult.hit = true;
-        }
+    for (const ship of ships) {
+      if (ship.hasLocation(guess)) {
+        this._handleHit({ row, col }, ship, playerType, board, display);
         return this._hitResult;
       }
     }
 
+    // If the loop completes, it was a miss.
     board.setCell(row, col, 'O');
-    if (playerType === 'player') {
-      display?.showMessage(this._messages.playerMiss);
-    } else {
-      display?.showMessage(this._messages.miss);
-    }
+    display?.showMessage(playerType === 'player' ? this._messages.playerMiss : this._messages.miss);
 
     return this._hitResult;
   }
