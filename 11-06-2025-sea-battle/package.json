@@ -7,7 +7,8 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:watch": "node --test --watch test/",
-    "start": "node src/seabattle.js"
+    "start": "node src/seabattle.js",
+    "coverage": "node --experimental-test-coverage --test test/*.test.js"
   },
   "keywords": ["battleship", "console-game", "ai", "strategy"],
   "author": "Sea Battle Development Team",
