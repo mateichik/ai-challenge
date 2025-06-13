@@ -158,10 +158,6 @@ class SeaBattleGame {
           cpu.decrementNumShips();
       }
       
-      // Use error boundary for UI rendering
-      this.errorBoundary.renderSafely(() => {
-        this.display.renderBoards(cpuBoard, player.getBoard());
-      });
     } catch (error) {
       this.errorHandler.handleError(error, 'PlayerTurn');
     } finally {
