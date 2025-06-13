@@ -48,15 +48,12 @@ test('Game Startup Test', async (t) => {
     assert.ok(mockDisplay.showWelcome.calledOnce, 'showWelcome should be called');
     assert.ok(mockDisplay.showWelcome.calledWith(GameConfig.NUM_SHIPS), 'showWelcome called with wrong ship count');
     
-    assert.ok(mockDisplay.renderBoards.calledOnce, 'Boards should be rendered');
-    
     // Verify the order
     sinon.assert.callOrder(
       console.log, // "Boards created"
       mockDisplay.showMessage.withArgs('3 ships placed randomly for Player.'),
       mockDisplay.showMessage.withArgs('3 ships placed randomly for CPU.'),
-      mockDisplay.showWelcome,
-      mockDisplay.renderBoards
+      mockDisplay.showWelcome
     );
   });
 }); 

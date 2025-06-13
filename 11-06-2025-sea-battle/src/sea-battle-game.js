@@ -93,11 +93,6 @@ class SeaBattleGame {
 
     this.display.showWelcome(this.gameState.getCpu().getNumShips());
     
-    // Use error boundary for UI rendering
-    this.errorBoundary.renderSafely(() => {
-      this.display.renderBoards(cpuBoard, playerBoard);
-    });
-    
     endTimer();
   }
 
@@ -113,12 +108,20 @@ class SeaBattleGame {
     
     while (!gameOver) {
       try {
-        await this.playerTurn();
+        // Render the boards at the start of each turn, just like the original game.
+        this.errorBoundary.renderSafely(() => {
+          this.display.renderBoards(this._cpu.getBoard(), this._player.getBoard());
+        });
+
+        const playerTurnSuccess = await this.playerTurn();
         gameOver = this.gameState.isGameOver();
         if (gameOver) break;
         
-        await this.cpuTurn();
-        gameOver = this.gameState.isGameOver();
+        // Only let the CPU take a turn if the player's turn was successful
+        if (playerTurnSuccess) {
+          await this.cpuTurn();
+          gameOver = this.gameState.isGameOver();
+        }
       } catch (error) {
         this.errorHandler.handleError(error, 'GameLoop');
       }
@@ -128,6 +131,7 @@ class SeaBattleGame {
   /**
    * Manages the player's turn, including getting input and processing the guess.
    * @async
+   * @returns {Promise<boolean>} True if the turn was successful, false otherwise.
    */
   async playerTurn() {
     const endTimer = performanceMonitor.startTimer('playerTurn');
@@ -157,9 +161,10 @@ class SeaBattleGame {
       if (result.sunk) {
           cpu.decrementNumShips();
       }
-      
+      return true; // Turn was successful
     } catch (error) {
       this.errorHandler.handleError(error, 'PlayerTurn');
+      return false; // Turn was unsuccessful
     } finally {
       endTimer();
     }
@@ -193,10 +198,6 @@ class SeaBattleGame {
           player.decrementNumShips();
       }
       
-      // Use error boundary for UI rendering
-      this.errorBoundary.renderSafely(() => {
-        this.display.renderBoards(cpu.getBoard(), player.getBoard());
-      });
     } catch (error) {
       this.errorHandler.handleError(error, 'CpuTurn');
     } finally {
@@ -211,6 +212,10 @@ class SeaBattleGame {
     try {
       const endState = this.gameLogic.checkGameEnd(this.gameState);
       if (endState.gameOver) {
+        // Render the final board state before showing the game over message.
+        this.errorBoundary.renderSafely(() => {
+          this.display.renderBoards(this._cpu.getBoard(), this._player.getBoard());
+        });
         this.display.showGameEnd(endState.message);
       }
     } catch (error) {

@@ -1,7 +1,7 @@
 /**
  * Centralized error handling for Sea Battle game
  */
-import { GameError } from './game-errors.js';
+import { GameError, DuplicateGuessError } from './game-errors.js';
 
 /**
  * Handles game errors and provides appropriate responses
@@ -23,6 +23,14 @@ export class ErrorHandler {
    */
   handleError(error, context = '') {
     const contextPrefix = context ? `[${context}] ` : '';
+    
+    // Special case for duplicate guesses to match original game message
+    if (error instanceof DuplicateGuessError) {
+      if (this.display) {
+        this.display.showMessage('You already guessed that location!');
+      }
+      return { success: false, error: 'Duplicate guess' };
+    }
     
     // Handle different error types
     if (error instanceof GameError) {
