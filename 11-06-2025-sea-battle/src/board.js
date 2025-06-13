@@ -8,6 +8,8 @@ import { InvalidCoordinateError } from './game-errors.js';
 class Board {
   #boardArray;
   #size;
+  #renderCache;
+  #lastRenderKey;
 
   /**
    * Creates a new game board
@@ -19,6 +21,8 @@ class Board {
     validateNumberRange(size, 5, 20, 'board size');
     this.#size = size;
     this.#boardArray = this.#initializeBoard();
+    this.#renderCache = new Map();
+    this.#lastRenderKey = '';
   }
 
   /**
@@ -27,12 +31,10 @@ class Board {
    * @private
    */
   #initializeBoard() {
-    const board = [];
+    // Optimize array creation for large boards
+    const board = Array(this.#size);
     for (let i = 0; i < this.#size; i++) {
-      board[i] = [];
-      for (let j = 0; j < this.#size; j++) {
-        board[i][j] = '~';
-      }
+      board[i] = Array(this.#size).fill('~');
     }
     return board;
   }
@@ -45,10 +47,11 @@ class Board {
    * @throws {InvalidCoordinateError} If coordinates are invalid
    */
   getCell(row, col) {
-    if (!this.isValidCoordinate(row, col)) {
-      throw new InvalidCoordinateError(`${row},${col}`, this.#size);
+    // Fast path for common case - avoid validation overhead when possible
+    if (row >= 0 && row < this.#size && col >= 0 && col < this.#size) {
+      return this.#boardArray[row][col];
     }
-    return this.#boardArray[row][col];
+    throw new InvalidCoordinateError(`${row},${col}`, this.#size);
   }
 
   /**
@@ -59,10 +62,13 @@ class Board {
    * @throws {InvalidCoordinateError} If coordinates are invalid
    */
   setCell(row, col, value) {
-    if (!this.isValidCoordinate(row, col)) {
-      throw new InvalidCoordinateError(`${row},${col}`, this.#size);
+    if (row >= 0 && row < this.#size && col >= 0 && col < this.#size) {
+      this.#boardArray[row][col] = value;
+      // Invalidate render cache when board changes
+      this.#renderCache.clear();
+      return;
     }
-    this.#boardArray[row][col] = value;
+    throw new InvalidCoordinateError(`${row},${col}`, this.#size);
   }
 
   /**
@@ -109,6 +115,8 @@ class Board {
         this.#boardArray[i][j] = '~';
       }
     }
+    // Invalidate render cache when board changes
+    this.#renderCache.clear();
   }
 
   /**
@@ -118,30 +126,71 @@ class Board {
    * @returns {string} String representation of the board
    */
   render(title = 'BOARD', showShips = false) {
-    let output = `\n   --- ${title} ---\n`;
+    // Create cache key
+    const cacheKey = `${title}-${showShips}-${this.#boardArrayHash()}`;
     
-    // Header with column numbers
+    // Return cached render if available
+    if (this.#renderCache.has(cacheKey)) {
+      this.#lastRenderKey = cacheKey;
+      return this.#renderCache.get(cacheKey);
+    }
+    
+    // For large boards, use string concatenation instead of template literals
+    // for better performance
+    let output = '\n   --- ' + title + ' ---\n';
+    
+    // Pre-allocate header
     let header = '  ';
     for (let h = 0; h < this.#size; h++) {
-      header += `${h} `;
+      header += h + ' ';
     }
-    output += `${header}\n`;
+    output += header + '\n';
 
-    // Board rows
+    // Board rows - use string builder approach for large boards
+    const boardArray = this.#boardArray;
     for (let i = 0; i < this.#size; i++) {
-      let rowStr = `${i} `;
+      let rowStr = i + ' ';
       for (let j = 0; j < this.#size; j++) {
-        let cellValue = this.#boardArray[i][j];
+        let cellValue = boardArray[i][j];
         // Hide ships if showShips is false
         if (!showShips && cellValue === 'S') {
           cellValue = '~';
         }
-        rowStr += `${cellValue} `;
+        rowStr += cellValue + ' ';
       }
-      output += `${rowStr}\n`;
+      output += rowStr + '\n';
     }
     
+    // Cache the rendered output
+    if (this.#renderCache.size > 10) {
+      // Limit cache size to prevent memory leaks
+      if (this.#lastRenderKey) {
+        this.#renderCache.delete(this.#lastRenderKey);
+      }
+    }
+    this.#renderCache.set(cacheKey, output);
+    this.#lastRenderKey = cacheKey;
+    
     return output;
+  }
+
+  /**
+   * Creates a simple hash of the board array for cache invalidation
+   * @returns {string} Simple hash of the board state
+   * @private
+   */
+  #boardArrayHash() {
+    // Simple hash function - count occurrences of each cell type
+    const counts = { '~': 0, 'S': 0, 'X': 0, 'O': 0 };
+    
+    for (let i = 0; i < this.#size; i++) {
+      for (let j = 0; j < this.#size; j++) {
+        const cell = this.#boardArray[i][j];
+        counts[cell] = (counts[cell] || 0) + 1;
+      }
+    }
+    
+    return `${counts['~']}-${counts['S']}-${counts['X']}-${counts['O']}`;
   }
 
   /**
@@ -157,34 +206,63 @@ class Board {
       throw new TypeError('Both boards must be provided');
     }
     
+    // Create cache key based on both boards' state
+    const cacheKey = `sideBySide-${opponentBoard.#boardArrayHash()}-${playerBoard.#boardArrayHash()}`;
+    
+    // Check if we have a cached version (static cache)
+    if (Board.renderCache && Board.renderCache.has(cacheKey)) {
+      return Board.renderCache.get(cacheKey);
+    }
+    
     const size = opponentBoard.getSize();
     let output = '\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---\n';
     
-    // Header
+    // Pre-allocate header
     let header = '  ';
-    for (let h = 0; h < size; h++) header += `${h} `;
-    output += `${header}     ${header}\n`;
+    for (let h = 0; h < size; h++) header += h + ' ';
+    output += header + '     ' + header + '\n';
 
-    // Board rows
+    // Get direct board references for performance
+    const opponentBoardArray = opponentBoard._getDirectBoardReference();
+    const playerBoardArray = playerBoard._getDirectBoardReference();
+
+    // Board rows - use string builder approach
+    const rows = [];
     for (let i = 0; i < size; i++) {
-      let rowStr = `${i} `;
+      let rowStr = i + ' ';
 
       // Opponent board (hide ships)
       for (let j = 0; j < size; j++) {
-        let cellValue = opponentBoard.getCell(i, j);
+        let cellValue = opponentBoardArray[i][j];
         if (cellValue === 'S') cellValue = '~'; // Hide opponent ships
-        rowStr += `${cellValue} `;
+        rowStr += cellValue + ' ';
       }
       
-      rowStr += `    ${i} `;
+      rowStr += '    ' + i + ' ';
 
       // Player board (show ships)
       for (let j = 0; j < size; j++) {
-        rowStr += `${playerBoard.getCell(i, j)} `;
+        rowStr += playerBoardArray[i][j] + ' ';
       }
       
-      output += `${rowStr}\n`;
+      rows.push(rowStr);
     }
+    
+    output += rows.join('\n') + '\n';
+    
+    // Initialize static cache if needed
+    if (!Board.renderCache) {
+      Board.renderCache = new Map();
+    }
+    
+    // Limit cache size
+    if (Board.renderCache.size > 20) {
+      // Clear cache if it gets too big
+      Board.renderCache.clear();
+    }
+    
+    // Cache the result
+    Board.renderCache.set(cacheKey, output);
     
     return output;
   }
@@ -202,14 +280,17 @@ class Board {
    */
   static isValidAndNewGuess(row, col, guessList, boardSize) {
     try {
-      validateCoordinate(row, col, boardSize);
-      
-      if (!Array.isArray(guessList)) {
+      // Fast path for common case
+      if (row >= 0 && row < boardSize && col >= 0 && col < boardSize) {
+        if (Array.isArray(guessList)) {
+          const guessStr = `${row}${col}`;
+          return !guessList.includes(guessStr);
+        }
         throw new TypeError('guessList must be an array');
       }
       
-      const guessStr = `${row}${col}`;
-      return !guessList.includes(guessStr);
+      validateCoordinate(row, col, boardSize);
+      return false; // This line won't be reached if validation passes
     } catch (error) {
       if (error instanceof InvalidCoordinateError) {
         return false;
@@ -218,5 +299,8 @@ class Board {
     }
   }
 }
+
+// Static cache for rendered boards
+Board.renderCache = new Map();
 
 export { Board }; 

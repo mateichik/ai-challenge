@@ -5,18 +5,35 @@ import { InputHandler } from './input-handler.js';
 import { ErrorHandler } from './error-handler.js';
 import { ErrorBoundary } from './error-boundary.js';
 import { createBoard } from './board-utils.js';
+import { performanceMonitor } from './performance-monitor.js';
 
 class SeaBattleGame {
   constructor() {
+    // Initialize components
     this.gameState = new GameState();
     this.gameLogic = new GameLogic();
     this.display = new GameDisplay();
     this.inputHandler = new InputHandler(this.display);
     this.errorHandler = new ErrorHandler(this.display);
     this.errorBoundary = new ErrorBoundary(this.display);
+    
+    // Cache frequently accessed properties
+    this._boardSize = this.gameState.getBoardSize();
+    this._shipLength = this.gameState.getShipLength();
+    this._player = this.gameState.getPlayer();
+    this._cpu = this.gameState.getCpu();
+    
+    // Apply performance monitoring to critical methods
+    if (process.env.ENABLE_PERFORMANCE_MONITORING === 'true') {
+      this.playGame = performanceMonitor.monitor(this.playGame.bind(this), 'SeaBattleGame.playGame');
+      this.gameLoop = performanceMonitor.monitor(this.gameLoop.bind(this), 'SeaBattleGame.gameLoop');
+      this.playerTurn = performanceMonitor.monitor(this.playerTurn.bind(this), 'SeaBattleGame.playerTurn');
+      this.cpuTurn = performanceMonitor.monitor(this.cpuTurn.bind(this), 'SeaBattleGame.cpuTurn');
+    }
   }
 
   async playGame() {
+    const endTimer = performanceMonitor.startTimer('gameSession');
     try {
       this.display.showWelcome();
       await this.initializeGame();
@@ -26,31 +43,55 @@ class SeaBattleGame {
       this.errorHandler.handleError(error, 'GameMain');
     } finally {
       this.inputHandler.close();
+      endTimer();
+      
+      // Print performance metrics at the end if enabled
+      if (process.env.ENABLE_PERFORMANCE_MONITORING === 'true') {
+        performanceMonitor.printMetrics();
+      }
     }
   }
 
   async initializeGame() {
-    const boards = createBoard(this.gameState.getBoardSize());
-    this.gameState.getPlayer().setBoard(boards.playerBoardObject);
-    this.gameState.getCpu().setBoard(boards.opponentBoardObject);
+    const endTimer = performanceMonitor.startTimer('gameInitialization');
     
-    this.gameLogic.placeShips(this.gameState.getPlayer().getBoard(), this.gameState.getPlayer().getShips(), 3, this.gameState.getBoardSize(), this.gameState.getShipLength(), this.gameState.getPlayer().getBoard());
+    // Create boards
+    const boards = createBoard(this._boardSize);
+    this._player.setBoard(boards.playerBoardObject);
+    this._cpu.setBoard(boards.opponentBoardObject);
+    
+    // Place ships - cache local references to avoid property lookups
+    const playerBoard = this._player.getBoard();
+    const playerShips = this._player.getShips();
+    const cpuBoard = this._cpu.getBoard();
+    const cpuShips = this._cpu.getShips();
+    
+    this.gameLogic.placeShips(playerBoard, playerShips, 3, this._boardSize, this._shipLength, playerBoard);
     this.display.showMessage('Player ships placed.');
-    this.gameLogic.placeShips(this.gameState.getCpu().getBoard(), this.gameState.getCpu().getShips(), 3, this.gameState.getBoardSize(), this.gameState.getShipLength());
+    this.gameLogic.placeShips(cpuBoard, cpuShips, 3, this._boardSize, this._shipLength);
     this.display.showMessage('CPU ships placed.');
     
     // Use error boundary for UI rendering
     this.errorBoundary.renderSafely(() => {
-      this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+      this.display.renderBoards(cpuBoard, playerBoard);
     });
+    
+    endTimer();
   }
 
   async gameLoop() {
-    while (!this.gameState.isGameOver()) {
+    // Avoid accessing this.gameState.isGameOver() in the loop condition
+    // as it causes property lookups on every iteration
+    let gameOver = false;
+    
+    while (!gameOver) {
       try {
         await this.playerTurn();
-        if (this.gameState.isGameOver()) break;
+        gameOver = this.gameState.isGameOver();
+        if (gameOver) break;
+        
         await this.cpuTurn();
+        gameOver = this.gameState.isGameOver();
       } catch (error) {
         this.errorHandler.handleError(error, 'GameLoop');
       }
@@ -58,49 +99,62 @@ class SeaBattleGame {
   }
 
   async playerTurn() {
+    const endTimer = performanceMonitor.startTimer('playerTurn');
     try {
+      // Get player guess
       let guess = await this.inputHandler.getPlayerGuess();
 
+      // Cache local references to avoid repeated property lookups
+      const player = this._player;
+      const cpu = this._cpu;
+      const playerGuesses = player.getGuesses();
+      const cpuShips = cpu.getShips();
+      const cpuBoard = cpu.getBoard();
+
+      // Process the hit
       const result = this.gameLogic.processHit(
           guess,
-          this.gameState.getBoardSize(),
-          this.gameState.getPlayer().getGuesses(),
-          this.gameState.getCpu().getShips(),
-          this.gameState.getCpu().getBoard(),
-          this.gameState.getShipLength(),
+          this._boardSize,
+          playerGuesses,
+          cpuShips,
+          cpuBoard,
+          this._shipLength,
           'player',
           this.display
       );
       
       if (result.sunk) {
-          this.gameState.getCpu().decrementNumShips();
+          cpu.decrementNumShips();
       }
       
       // Use error boundary for UI rendering
       this.errorBoundary.renderSafely(() => {
-        this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+        this.display.renderBoards(cpuBoard, player.getBoard());
       });
     } catch (error) {
       this.errorHandler.handleError(error, 'PlayerTurn');
+    } finally {
+      endTimer();
     }
   }
 
   async cpuTurn() {
+    const endTimer = performanceMonitor.startTimer('cpuTurn');
     try {
       this.display.showMessage("\n--- CPU's Turn ---");
-      const {
-          player,
-          cpu,
-          boardSize
-      } = this.gameState;
+      
+      // Cache local references
+      const player = this._player;
+      const cpu = this._cpu;
       
       // Simulate CPU "thinking" time with a small delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Calculate CPU's next move
       const result = cpu.calculateNextMove(
           player.getShips(),
           player.getBoard(),
-          boardSize,
+          this._boardSize,
           this.display
       );
 
@@ -114,6 +168,8 @@ class SeaBattleGame {
       });
     } catch (error) {
       this.errorHandler.handleError(error, 'CpuTurn');
+    } finally {
+      endTimer();
     }
   }
   

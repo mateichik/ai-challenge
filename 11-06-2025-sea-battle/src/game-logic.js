@@ -1,6 +1,7 @@
 import { Ship } from './ship.js';
 import { validateNumberRange, validateRequired, validateArray, validateCoordinate } from './validation.js';
 import { InvalidCoordinateError, DuplicateGuessError, InvalidShipPlacementError } from './game-errors.js';
+import { performanceMonitor } from './performance-monitor.js';
 
 /**
  * Game Logic Management Class
@@ -9,6 +10,28 @@ import { InvalidCoordinateError, DuplicateGuessError, InvalidShipPlacementError 
 class GameLogic {
   constructor() {
     // GameLogic is stateless - all methods accept state as parameters
+    // Pre-allocate reusable objects to minimize GC pressure
+    this._shipPlacementResult = { success: false, attempts: 0 };
+    this._hitResult = { success: false, hit: false, sunk: false };
+    this._gameEndResult = { gameOver: false, winner: null, message: null };
+    
+    // Pre-defined messages for common scenarios
+    this._messages = {
+      playerHit: 'PLAYER HIT!',
+      hit: 'HIT!',
+      playerMiss: 'PLAYER MISS.',
+      miss: 'MISS.',
+      sunkEnemy: 'You sunk an enemy battleship!',
+      sunkGeneric: 'You sunk a battleship!',
+      alreadyHit: 'You already hit that spot!'
+    };
+    
+    // Wrap performance-critical methods with monitoring
+    if (process.env.ENABLE_PERFORMANCE_MONITORING === 'true') {
+      this.placeShips = performanceMonitor.monitor(this.placeShips.bind(this), 'GameLogic.placeShips');
+      this.processHit = performanceMonitor.monitor(this.processHit.bind(this), 'GameLogic.processHit');
+      this.checkGameEnd = performanceMonitor.monitor(this.checkGameEnd.bind(this), 'GameLogic.checkGameEnd');
+    }
   }
 
   /**
@@ -39,8 +62,19 @@ class GameLogic {
     const maxAttempts = boardSize * boardSize * 10; // Safeguard against infinite loops
 
     // Create a tracking grid to check for collisions more reliably
-    const occupiedCells = Array(boardSize).fill().map(() => Array(boardSize).fill(false));
+    // Reuse existing array if possible to reduce memory allocation
+    if (!this._occupiedCells || this._occupiedCells.length !== boardSize) {
+      this._occupiedCells = Array(boardSize).fill().map(() => Array(boardSize).fill(false));
+    } else {
+      // Reset existing array
+      for (let i = 0; i < boardSize; i++) {
+        this._occupiedCells[i].fill(false);
+      }
+    }
 
+    // Reuse ship locations array to reduce allocations in the loop
+    const shipLocations = [];
+    
     while (placedShips < numberOfShips && attempts < maxAttempts) {
       const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
       let startRow, startCol;
@@ -71,14 +105,16 @@ class GameLogic {
         }
 
         // Check both the board state and our tracking grid
-        if (targetBoard.getCell(checkRow, checkCol) !== '~' || occupiedCells[checkRow][checkCol]) {
+        if (targetBoard.getCell(checkRow, checkCol) !== '~' || this._occupiedCells[checkRow][checkCol]) {
           collision = true;
           break;
         }
       }
 
       if (!collision) {
-        const shipLocations = [];
+        // Clear previous locations
+        shipLocations.length = 0;
+        
         for (let i = 0; i < shipLength; i++) {
           let placeRow = startRow;
           let placeCol = startCol;
@@ -91,7 +127,7 @@ class GameLogic {
           shipLocations.push(locationStr);
 
           // Mark as occupied in our tracking grid
-          occupiedCells[placeRow][placeCol] = true;
+          this._occupiedCells[placeRow][placeCol] = true;
 
           if (targetBoard === playerBoard) {
             targetBoard.setCell(placeRow, placeCol, 'S');
@@ -99,7 +135,8 @@ class GameLogic {
         }
         
         // Create Ship object instead of plain object
-        const newShip = new Ship(shipLocations);
+        // Clone the locations array to avoid reference issues
+        const newShip = new Ship([...shipLocations]);
         shipsArray.push(newShip);
         placedShips++;
       }
@@ -109,6 +146,12 @@ class GameLogic {
     if (placedShips < numberOfShips) {
       throw new InvalidShipPlacementError(`Failed to place all ships after ${maxAttempts} attempts`);
     }
+    
+    // Update result object for reuse
+    this._shipPlacementResult.success = true;
+    this._shipPlacementResult.attempts = attempts;
+    
+    return this._shipPlacementResult;
   }
 
   /**
@@ -156,10 +199,14 @@ class GameLogic {
     
     guesses.push(formattedGuess);
 
-    let hit = false;
-    let sunk = false;
+    // Reset result object
+    this._hitResult.hit = false;
+    this._hitResult.sunk = false;
+    this._hitResult.success = true;
 
-    for (let i = 0; i < ships.length; i++) {
+    // Cache ship count for performance
+    const shipCount = ships.length;
+    for (let i = 0; i < shipCount; i++) {
       const ship = ships[i];
       
       if (ship.hasLocation(formattedGuess)) {
@@ -169,41 +216,39 @@ class GameLogic {
           // New hit
           board.setCell(row, col, 'X');
           
-          // Player-specific messages
+          // Player-specific messages - use cached messages
           if (playerType === 'player') {
-            display?.showMessage('PLAYER HIT!');
+            display?.showMessage(this._messages.playerHit);
           } else {
-            display?.showMessage('HIT!');
+            display?.showMessage(this._messages.hit);
           }
-          hit = true;
+          this._hitResult.hit = true;
 
           if (ship.isSunk()) {
             if (playerType === 'player') {
-              display?.showMessage('You sunk an enemy battleship!');
+              display?.showMessage(this._messages.sunkEnemy);
             } else {
-              display?.showMessage('You sunk a battleship!');
+              display?.showMessage(this._messages.sunkGeneric);
             }
-            sunk = true;
+            this._hitResult.sunk = true;
           }
         } else {
           // Already hit this location
-          display?.showMessage('You already hit that spot!');
-          hit = true;
+          display?.showMessage(this._messages.alreadyHit);
+          this._hitResult.hit = true;
         }
-        break;
+        return this._hitResult;
       }
     }
 
-    if (!hit) {
-      board.setCell(row, col, 'O');
-      if (playerType === 'player') {
-        display?.showMessage('PLAYER MISS.');
-      } else {
-        display?.showMessage('MISS.');
-      }
+    board.setCell(row, col, 'O');
+    if (playerType === 'player') {
+      display?.showMessage(this._messages.playerMiss);
+    } else {
+      display?.showMessage(this._messages.miss);
     }
 
-    return { success: true, hit: hit, sunk: sunk };
+    return this._hitResult;
   }
 
   /**
@@ -225,15 +270,26 @@ class GameLogic {
     validateRequired(player, 'player');
     validateRequired(cpu, 'cpu');
     
+    // Reset result object
+    this._gameEndResult.gameOver = false;
+    this._gameEndResult.winner = null;
+    this._gameEndResult.message = null;
+    
     if (player.getNumShips() === 0) {
-      return { gameOver: true, winner: 'CPU', message: '*** GAME OVER! The CPU sunk all your battleships! ***' };
+      this._gameEndResult.gameOver = true;
+      this._gameEndResult.winner = 'CPU';
+      this._gameEndResult.message = '*** GAME OVER! The CPU sunk all your battleships! ***';
+      return this._gameEndResult;
     }
     
     if (cpu.getNumShips() === 0) {
-      return { gameOver: true, winner: 'Player', message: '*** CONGRATULATIONS! You sunk all enemy battleships! ***' };
+      this._gameEndResult.gameOver = true;
+      this._gameEndResult.winner = 'Player';
+      this._gameEndResult.message = '*** CONGRATULATIONS! You sunk all enemy battleships! ***';
+      return this._gameEndResult;
     }
     
-    return { gameOver: false, winner: null, message: null };
+    return this._gameEndResult;
   }
 }
 
