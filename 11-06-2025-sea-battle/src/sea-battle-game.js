@@ -2,6 +2,8 @@ import { GameState } from './game-state.js';
 import { GameLogic } from './game-logic.js';
 import { GameDisplay } from './game-display.js';
 import { InputHandler } from './input-handler.js';
+import { ErrorHandler } from './error-handler.js';
+import { ErrorBoundary } from './error-boundary.js';
 import { createBoard } from './board-utils.js';
 
 class SeaBattleGame {
@@ -9,7 +11,9 @@ class SeaBattleGame {
     this.gameState = new GameState();
     this.gameLogic = new GameLogic();
     this.display = new GameDisplay();
-    this.inputHandler = new InputHandler();
+    this.inputHandler = new InputHandler(this.display);
+    this.errorHandler = new ErrorHandler(this.display);
+    this.errorBoundary = new ErrorBoundary(this.display);
   }
 
   async playGame() {
@@ -19,8 +23,7 @@ class SeaBattleGame {
       await this.gameLoop();
       this.endGame();
     } catch (error) {
-      this.display.showMessage(`An error occurred: ${error.message}`);
-      console.error('Game error:', error);
+      this.errorHandler.handleError(error, 'GameMain');
     } finally {
       this.inputHandler.close();
     }
@@ -36,7 +39,10 @@ class SeaBattleGame {
     this.gameLogic.placeShips(this.gameState.getCpu().getBoard(), this.gameState.getCpu().getShips(), 3, this.gameState.getBoardSize(), this.gameState.getShipLength());
     this.display.showMessage('CPU ships placed.');
     
-    this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+    // Use error boundary for UI rendering
+    this.errorBoundary.renderSafely(() => {
+      this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+    });
   }
 
   async gameLoop() {
@@ -46,8 +52,7 @@ class SeaBattleGame {
         if (this.gameState.isGameOver()) break;
         await this.cpuTurn();
       } catch (error) {
-        this.display.showMessage(`Turn error: ${error.message}`);
-        console.error('Turn error:', error);
+        this.errorHandler.handleError(error, 'GameLoop');
       }
     }
   }
@@ -71,10 +76,12 @@ class SeaBattleGame {
           this.gameState.getCpu().decrementNumShips();
       }
       
-      this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+      // Use error boundary for UI rendering
+      this.errorBoundary.renderSafely(() => {
+        this.display.renderBoards(this.gameState.getCpu().getBoard(), this.gameState.getPlayer().getBoard());
+      });
     } catch (error) {
-      this.display.showMessage(`Player turn error: ${error.message}`);
-      throw error; // Re-throw to be handled by game loop
+      this.errorHandler.handleError(error, 'PlayerTurn');
     }
   }
 
@@ -101,17 +108,23 @@ class SeaBattleGame {
           player.decrementNumShips();
       }
       
-      this.display.renderBoards(cpu.getBoard(), player.getBoard());
+      // Use error boundary for UI rendering
+      this.errorBoundary.renderSafely(() => {
+        this.display.renderBoards(cpu.getBoard(), player.getBoard());
+      });
     } catch (error) {
-      this.display.showMessage(`CPU turn error: ${error.message}`);
-      throw error; // Re-throw to be handled by game loop
+      this.errorHandler.handleError(error, 'CpuTurn');
     }
   }
   
   endGame() {
-    const endState = this.gameLogic.checkGameEnd(this.gameState);
-    if (endState.gameOver) {
-      this.display.showGameEnd(endState.message);
+    try {
+      const endState = this.gameLogic.checkGameEnd(this.gameState);
+      if (endState.gameOver) {
+        this.display.showGameEnd(endState.message);
+      }
+    } catch (error) {
+      this.errorHandler.handleError(error, 'EndGame');
     }
   }
 }

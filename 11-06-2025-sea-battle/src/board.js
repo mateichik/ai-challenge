@@ -2,6 +2,9 @@
  * Board Class - Represents a game board
  * Manages the 2D grid and provides methods for cell manipulation
  */
+import { validateNumberRange, validateCoordinate } from './validation.js';
+import { InvalidCoordinateError } from './game-errors.js';
+
 class Board {
   #boardArray;
   #size;
@@ -9,8 +12,11 @@ class Board {
   /**
    * Creates a new game board
    * @param {number} size - Size of the board (creates a size x size grid)
+   * @throws {TypeError} If size is not a number
+   * @throws {RangeError} If size is out of valid range
    */
   constructor(size) {
+    validateNumberRange(size, 5, 20, 'board size');
     this.#size = size;
     this.#boardArray = this.#initializeBoard();
   }
@@ -36,11 +42,11 @@ class Board {
    * @param {number} row - Row index
    * @param {number} col - Column index
    * @returns {string} Cell value
-   * @throws {Error} If coordinates are invalid
+   * @throws {InvalidCoordinateError} If coordinates are invalid
    */
   getCell(row, col) {
     if (!this.isValidCoordinate(row, col)) {
-      throw new Error(`Invalid coordinates: ${row}, ${col}`);
+      throw new InvalidCoordinateError(`${row},${col}`, this.#size);
     }
     return this.#boardArray[row][col];
   }
@@ -50,11 +56,11 @@ class Board {
    * @param {number} row - Row index
    * @param {number} col - Column index
    * @param {string} value - New cell value
-   * @throws {Error} If coordinates are invalid
+   * @throws {InvalidCoordinateError} If coordinates are invalid
    */
   setCell(row, col, value) {
     if (!this.isValidCoordinate(row, col)) {
-      throw new Error(`Invalid coordinates: ${row}, ${col}`);
+      throw new InvalidCoordinateError(`${row},${col}`, this.#size);
     }
     this.#boardArray[row][col] = value;
   }
@@ -143,9 +149,14 @@ class Board {
    * @param {Board} opponentBoard - Opponent's board
    * @param {Board} playerBoard - Player's board
    * @returns {string} String representation of both boards
+   * @throws {TypeError} If boards are invalid
    * @static
    */
   static renderSideBySide(opponentBoard, playerBoard) {
+    if (!opponentBoard || !playerBoard) {
+      throw new TypeError('Both boards must be provided');
+    }
+    
     const size = opponentBoard.getSize();
     let output = '\n   --- OPPONENT BOARD ---          --- YOUR BOARD ---\n';
     
@@ -185,14 +196,26 @@ class Board {
    * @param {Array} guessList - List of previous guesses
    * @param {number} boardSize - Size of the board
    * @returns {boolean} True if the guess is valid and new
+   * @throws {InvalidCoordinateError} If coordinates are invalid
+   * @throws {TypeError} If guessList is not an array
    * @static
    */
   static isValidAndNewGuess(row, col, guessList, boardSize) {
-    if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
-      return false;
+    try {
+      validateCoordinate(row, col, boardSize);
+      
+      if (!Array.isArray(guessList)) {
+        throw new TypeError('guessList must be an array');
+      }
+      
+      const guessStr = `${row}${col}`;
+      return !guessList.includes(guessStr);
+    } catch (error) {
+      if (error instanceof InvalidCoordinateError) {
+        return false;
+      }
+      throw error;
     }
-    const guessStr = `${row}${col}`;
-    return !guessList.includes(guessStr);
   }
 }
 

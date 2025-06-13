@@ -37,7 +37,9 @@ readline.createInterface = mockReadline.createInterface;
 
 // Mock InputHandler for tests that require user input
 class MockInputHandler {
-  constructor() {}
+  constructor(display) {
+    this.display = display;
+  }
   async getPlayerGuess() { return '00'; }
   close() {}
 }
@@ -57,7 +59,7 @@ test('Game Integration Tests', async (t) => {
     display = game.display;
     
     // Replace the real InputHandler with our mock
-    game.inputHandler = new MockInputHandler();
+    game.inputHandler = new MockInputHandler(display);
   });
 
   t.afterEach(() => {
@@ -251,7 +253,7 @@ test('Game Flow Integration Tests', async (t) => {
     gameState = game.gameState;
     gameLogic = game.gameLogic;
     display = game.display;
-    inputHandler = new InputHandler();
+    inputHandler = new InputHandler(display);
   });
 
   t.afterEach(() => {

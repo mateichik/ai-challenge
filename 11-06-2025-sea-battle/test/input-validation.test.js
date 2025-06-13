@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { GameLogic, Ship } from '../seabattle.js';
 import { GameDisplay } from '../src/game-display.js';
 import { Board } from '../src/board.js';
+import { InvalidCoordinateError, DuplicateGuessError } from '../src/game-errors.js';
 
 // Mock GameDisplay to capture messages
 class MockDisplay {
@@ -12,6 +13,10 @@ class MockDisplay {
   
   showMessage(message) {
     this.messages.push(message);
+  }
+  
+  showError(message) {
+    this.messages.push(`ERROR: ${message}`);
   }
   
   getLastMessage() {
@@ -41,67 +46,94 @@ test('Input Validation Tests', async (t) => {
   // REQ-066, REQ-070: Input must be exactly 2 characters long
   await t.test('should reject input that is not exactly 2 characters long', () => {
     // Test empty input
-    let result = gameLogic.processHit('', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('exactly two digits'));
+    try {
+      gameLogic.processHit('', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
     
     // Test single character input
-    display.clearMessages();
-    result = gameLogic.processHit('1', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('exactly two digits'));
+    try {
+      gameLogic.processHit('1', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
     
     // Test too long input
-    display.clearMessages();
-    result = gameLogic.processHit('123', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('exactly two digits'));
+    try {
+      gameLogic.processHit('123', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
   });
   
   // REQ-067, REQ-069: Both characters must be numeric digits
   await t.test('should reject non-numeric input', () => {
     // Test non-numeric characters
-    let result = gameLogic.processHit('ab', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('valid row and column numbers'));
+    try {
+      gameLogic.processHit('ab', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
     
     // Test mixed characters
-    display.clearMessages();
-    result = gameLogic.processHit('a1', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('valid row and column numbers'));
+    try {
+      gameLogic.processHit('a1', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
     
     // Test special characters
-    display.clearMessages();
-    result = gameLogic.processHit('!@', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('valid row and column numbers'));
+    try {
+      gameLogic.processHit('!@', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
   });
   
   // REQ-071, REQ-072, REQ-073: Coordinates must be within valid range
   await t.test('should reject coordinates outside valid range', () => {
     // Test out of bounds row
-    let result = gameLogic.processHit('A0', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
+    try {
+      gameLogic.processHit('A0', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
     
     // Test out of bounds column
-    display.clearMessages();
-    result = gameLogic.processHit('0A', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
+    try {
+      gameLogic.processHit('0A', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
     
     // Test both out of bounds
-    display.clearMessages();
-    result = gameLogic.processHit('AA', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
+    try {
+      gameLogic.processHit('AA', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown InvalidCoordinateError');
+    } catch (error) {
+      assert.ok(error instanceof InvalidCoordinateError);
+    }
   });
   
   // REQ-074, REQ-075: System should maintain history and prevent duplicate guesses
   await t.test('should prevent duplicate guesses', () => {
     // First guess should succeed
     guesses.push('00');
-    let result = gameLogic.processHit('00', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('already guessed'));
+    try {
+      gameLogic.processHit('00', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown DuplicateGuessError');
+    } catch (error) {
+      assert.ok(error instanceof DuplicateGuessError);
+    }
   });
 });
 
@@ -123,9 +155,12 @@ test('Edge Case Tests', async (t) => {
   // EDGE-008: Player repeats previous guess
   await t.test('should handle repeated guesses gracefully', () => {
     guesses.push('00');
-    const result = gameLogic.processHit('00', 10, guesses, ships, board, 3, 'player', display);
-    assert.equal(result.success, false);
-    assert.ok(display.getLastMessage().includes('already guessed'));
+    try {
+      gameLogic.processHit('00', 10, guesses, ships, board, 3, 'player', display);
+      assert.fail('Should have thrown DuplicateGuessError');
+    } catch (error) {
+      assert.ok(error instanceof DuplicateGuessError);
+    }
   });
   
   // EDGE-009: Player hits same ship segment twice

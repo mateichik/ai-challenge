@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { AIPlayer, GameLogic, Ship } from '../seabattle.js';
 import { Board } from '../src/board.js';
 import { MockDisplay } from './input-validation.test.js';
+import { GameConfig } from '../src/game-config.js';
 
 test('AI Player Tests', async (t) => {
   let cpu;
@@ -11,7 +12,7 @@ test('AI Player Tests', async (t) => {
   let display;
   
   t.beforeEach(() => {
-    cpu = new AIPlayer();
+    cpu = new AIPlayer(GameConfig.BOARD_SIZE, GameConfig.NUM_SHIPS, GameConfig.SHIP_LENGTH);
     playerBoard = new Board(10);
     playerShips = [
       new Ship(['00', '01', '02']),
@@ -116,7 +117,7 @@ test('AI Player Tests', async (t) => {
   // EDGE-015: CPU target queue becomes empty while in target mode
   await t.test('should switch to hunt mode if target queue becomes empty', () => {
     // Create a fresh AI player
-    const testCpu = new AIPlayer();
+    const testCpu = new AIPlayer(GameConfig.BOARD_SIZE, GameConfig.NUM_SHIPS, GameConfig.SHIP_LENGTH);
     
     // Explicitly set mode to target with empty queue
     testCpu.setMode('target');
@@ -154,7 +155,7 @@ test('AI Player Tests', async (t) => {
     });
     
     // Reset and test edge hit
-    cpu = new AIPlayer();
+    cpu = new AIPlayer(GameConfig.BOARD_SIZE, GameConfig.NUM_SHIPS, GameConfig.SHIP_LENGTH);
     const edgeShip = new Ship(['05']);
     playerShips = [edgeShip];
     

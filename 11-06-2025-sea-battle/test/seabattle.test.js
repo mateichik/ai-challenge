@@ -65,8 +65,8 @@ test('Board Class', async (t) => {
   });
 
   await t.test('should throw error for invalid coordinates', () => {
-    assert.throws(() => board.getCell(-1, 0), { message: 'Invalid coordinates: -1, 0' });
-    assert.throws(() => board.setCell(10, 0, 'X'), { message: 'Invalid coordinates: 10, 0' });
+    assert.throws(() => board.getCell(-1, 0), { message: 'Invalid coordinate: -1,0. Must be between 0-9.' });
+    assert.throws(() => board.setCell(10, 0, 'X'), { message: 'Invalid coordinate: 10,0. Must be between 0-9.' });
   });
 });
 

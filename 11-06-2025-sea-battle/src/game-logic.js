@@ -1,4 +1,6 @@
 import { Ship } from './ship.js';
+import { validateNumberRange, validateRequired, validateArray, validateCoordinate } from './validation.js';
+import { InvalidCoordinateError, DuplicateGuessError, InvalidShipPlacementError } from './game-errors.js';
 
 /**
  * Game Logic Management Class
@@ -17,8 +19,18 @@ class GameLogic {
    * @param {number} boardSize - Size of the game board
    * @param {number} shipLength - Length of each ship
    * @param {Board} playerBoard - Player's board (for visibility)
+   * @throws {TypeError} If required parameters are missing or invalid
+   * @throws {InvalidShipPlacementError} If ships cannot be placed after maximum attempts
    */
   placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard) {
+    // Validate parameters
+    validateRequired(targetBoard, 'targetBoard');
+    validateRequired(shipsArray, 'shipsArray');
+    validateArray(shipsArray, 'shipsArray');
+    validateNumberRange(numberOfShips, 1, 10, 'numberOfShips');
+    validateNumberRange(boardSize, 5, 20, 'boardSize');
+    validateNumberRange(shipLength, 1, boardSize, 'shipLength');
+    
     // Clear existing ships array
     shipsArray.length = 0;
     
@@ -92,6 +104,11 @@ class GameLogic {
         placedShips++;
       }
     }
+    
+    // Check if we placed all ships
+    if (placedShips < numberOfShips) {
+      throw new InvalidShipPlacementError(`Failed to place all ships after ${maxAttempts} attempts`);
+    }
   }
 
   /**
@@ -105,37 +122,38 @@ class GameLogic {
    * @param {string} playerType - Type of player ('player', 'cpu', or 'generic')
    * @param {GameDisplay} display - Display object for showing messages
    * @returns {Object} Result object with success, hit, and sunk properties
+   * @throws {InvalidCoordinateError} If coordinates are invalid
+   * @throws {DuplicateGuessError} If location has already been guessed
    */
   processHit(guess, boardSize, guesses, ships, board, shipLength, playerType = 'generic', display) {
     // Input validation
-    if (guess === null || guess === undefined || typeof guess !== 'string' || guess.length !== 2) {
-      if (display) display.showMessage('Oops, input must be exactly two digits (e.g., 00, 34, 98).');
-      return { success: false, hit: false, sunk: false };
+    validateRequired(guess, 'guess');
+    validateRequired(guesses, 'guesses');
+    validateRequired(ships, 'ships');
+    validateRequired(board, 'board');
+    validateNumberRange(boardSize, 5, 20, 'boardSize');
+    validateArray(guesses, 'guesses');
+    validateArray(ships, 'ships');
+    
+    if (typeof guess !== 'string' || guess.length !== 2) {
+      throw new InvalidCoordinateError(guess, boardSize);
     }
 
     const row = parseInt(guess[0]);
     const col = parseInt(guess[1]);
 
-    if (
-      isNaN(row) ||
-      isNaN(col) ||
-      row < 0 ||
-      row >= boardSize ||
-      col < 0 ||
-      col >= boardSize
-    ) {
-      display?.showMessage(
-        `Oops, please enter valid row and column numbers between 0 and ${boardSize - 1}.`,
-      );
-      return { success: false, hit: false, sunk: false };
+    // Validate coordinates
+    if (isNaN(row) || isNaN(col) || row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
+      throw new InvalidCoordinateError(guess, boardSize);
     }
 
     const formattedGuess = guess;
 
+    // Check for duplicate guess
     if (guesses.includes(formattedGuess)) {
-      display?.showMessage('You already guessed that location!');
-      return { success: false, hit: false, sunk: false };
+      throw new DuplicateGuessError(formattedGuess);
     }
+    
     guesses.push(formattedGuess);
 
     let hit = false;
@@ -192,13 +210,26 @@ class GameLogic {
    * Checks if the game has ended
    * @param {GameState} gameState - Current game state
    * @returns {Object} Game end status with gameOver, winner, and message properties
+   * @throws {TypeError} If gameState is invalid
    */
   checkGameEnd(gameState) {
-    if (gameState.getPlayer().getNumShips() === 0) {
+    validateRequired(gameState, 'gameState');
+    
+    if (typeof gameState.getPlayer !== 'function' || typeof gameState.getCpu !== 'function') {
+      throw new TypeError('Invalid gameState object');
+    }
+    
+    const player = gameState.getPlayer();
+    const cpu = gameState.getCpu();
+    
+    validateRequired(player, 'player');
+    validateRequired(cpu, 'cpu');
+    
+    if (player.getNumShips() === 0) {
       return { gameOver: true, winner: 'CPU', message: '*** GAME OVER! The CPU sunk all your battleships! ***' };
     }
     
-    if (gameState.getCpu().getNumShips() === 0) {
+    if (cpu.getNumShips() === 0) {
       return { gameOver: true, winner: 'Player', message: '*** CONGRATULATIONS! You sunk all enemy battleships! ***' };
     }
     
