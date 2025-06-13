@@ -4,10 +4,14 @@ import { InvalidCoordinateError, DuplicateGuessError, InvalidShipPlacementError 
 import { performanceMonitor } from './performance-monitor.js';
 
 /**
- * Game Logic Management Class
- * Handles core game mechanics like ship placement and hit detection
+ * Handles core game mechanics such as ship placement, processing hits, and checking game end conditions.
+ * This class is designed to be stateless, with all methods accepting the current game state as parameters.
  */
 class GameLogic {
+  /**
+   * Initializes the GameLogic component.
+   * Pre-allocates reusable objects to minimize garbage collection during the game loop.
+   */
   constructor() {
     // GameLogic is stateless - all methods accept state as parameters
     // Pre-allocate reusable objects to minimize GC pressure
@@ -35,15 +39,15 @@ class GameLogic {
   }
 
   /**
-   * Places ships randomly on the game board
-   * @param {Board} targetBoard - The board to place ships on
-   * @param {Array} shipsArray - Array to store created ships
-   * @param {number} numberOfShips - Number of ships to place
-   * @param {number} boardSize - Size of the game board
-   * @param {number} shipLength - Length of each ship
-   * @param {Board} playerBoard - Player's board (for visibility)
-   * @throws {TypeError} If required parameters are missing or invalid
-   * @throws {InvalidShipPlacementError} If ships cannot be placed after maximum attempts
+   * Places the specified number of ships randomly on the game board, ensuring they do not overlap.
+   * @param {Board} targetBoard - The board on which to place the ships.
+   * @param {Array<Ship>} shipsArray - The array to store the created Ship objects.
+   * @param {number} numberOfShips - The total number of ships to place.
+   * @param {number} boardSize - The size of the game board (e.g., 10 for a 10x10 grid).
+   * @param {number} shipLength - The length of each ship.
+   * @param {Board} [playerBoard] - The player's board, used to mark ship locations with 'S' if provided.
+   * @returns {object} An object indicating the success of the placement and the number of attempts.
+   * @throws {InvalidShipPlacementError} If ships cannot be placed after the maximum number of attempts.
    */
   placeShips(targetBoard, shipsArray, numberOfShips, boardSize, shipLength, playerBoard) {
     // Validate parameters
@@ -155,18 +159,18 @@ class GameLogic {
   }
 
   /**
-   * Processes a player's guess and determines hit/miss result
-   * @param {string} guess - The coordinate guess (e.g., "00")
-   * @param {number} boardSize - Size of the game board
-   * @param {Array} guesses - Array of previous guesses
-   * @param {Array} ships - Array of ships to check for hits
-   * @param {Board} board - Game board to update
-   * @param {number} shipLength - Length of ships
-   * @param {string} playerType - Type of player ('player', 'cpu', or 'generic')
-   * @param {GameDisplay} display - Display object for showing messages
-   * @returns {Object} Result object with success, hit, and sunk properties
-   * @throws {InvalidCoordinateError} If coordinates are invalid
-   * @throws {DuplicateGuessError} If location has already been guessed
+   * Processes a player's or CPU's guess, updates the board, and determines the result.
+   * @param {string} guess - The coordinate of the guess (e.g., "00").
+   * @param {number} boardSize - The size of the game board.
+   * @param {Array<string>} guesses - An array of previous guesses to check for duplicates.
+   * @param {Array<Ship>} ships - The array of ships to check for hits.
+   * @param {Board} board - The game board to update with the result ('X' for hit, 'O' for miss).
+   * @param {number} shipLength - The length of the ships.
+   * @param {string} [playerType='generic'] - The type of player making the guess ('player' or 'cpu').
+   * @param {GameDisplay} [display] - The display object for showing messages.
+   * @returns {object} An object containing the result of the hit (success, hit, sunk).
+   * @throws {InvalidCoordinateError} If the guess coordinate is invalid.
+   * @throws {DuplicateGuessError} If the location has already been guessed.
    */
   processHit(guess, boardSize, guesses, ships, board, shipLength, playerType = 'generic', display) {
     // Input validation
@@ -252,10 +256,9 @@ class GameLogic {
   }
 
   /**
-   * Checks if the game has ended
-   * @param {GameState} gameState - Current game state
-   * @returns {Object} Game end status with gameOver, winner, and message properties
-   * @throws {TypeError} If gameState is invalid
+   * Checks if the game has ended by determining if either player has lost all their ships.
+   * @param {GameState} gameState - The current state of the game.
+   * @returns {object} An object indicating if the game is over, who the winner is, and a result message.
    */
   checkGameEnd(gameState) {
     validateRequired(gameState, 'gameState');

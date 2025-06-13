@@ -7,7 +7,15 @@ import { ErrorBoundary } from './error-boundary.js';
 import { createBoard } from './board-utils.js';
 import { performanceMonitor } from './performance-monitor.js';
 
+/**
+ * The main class that orchestrates the Sea Battle game.
+ * It initializes all game components, manages the game loop, and handles turns.
+ */
 class SeaBattleGame {
+  /**
+   * Initializes all game components, including state, logic, display, and handlers.
+   * Also caches frequently accessed properties for performance.
+   */
   constructor() {
     // Initialize components
     this.gameState = new GameState();
@@ -32,6 +40,11 @@ class SeaBattleGame {
     }
   }
 
+  /**
+   * Starts and manages the entire game from start to finish.
+   * It handles initialization, the main game loop, and the end game sequence.
+   * @async
+   */
   async playGame() {
     const endTimer = performanceMonitor.startTimer('gameSession');
     try {
@@ -52,6 +65,11 @@ class SeaBattleGame {
     }
   }
 
+  /**
+   * Sets up the initial state of the game.
+   * This includes creating the boards and placing ships for both the player and the CPU.
+   * @async
+   */
   async initializeGame() {
     const endTimer = performanceMonitor.startTimer('gameInitialization');
     
@@ -79,6 +97,11 @@ class SeaBattleGame {
     endTimer();
   }
 
+  /**
+   * The main loop of the game that continues until a winner is determined.
+   * It alternates between the player's turn and the CPU's turn.
+   * @async
+   */
   async gameLoop() {
     // Avoid accessing this.gameState.isGameOver() in the loop condition
     // as it causes property lookups on every iteration
@@ -98,6 +121,10 @@ class SeaBattleGame {
     }
   }
 
+  /**
+   * Manages the player's turn, including getting input and processing the guess.
+   * @async
+   */
   async playerTurn() {
     const endTimer = performanceMonitor.startTimer('playerTurn');
     try {
@@ -138,6 +165,10 @@ class SeaBattleGame {
     }
   }
 
+  /**
+   * Manages the CPU's turn, including calculating its move and processing the result.
+   * @async
+   */
   async cpuTurn() {
     const endTimer = performanceMonitor.startTimer('cpuTurn');
     try {
@@ -173,6 +204,9 @@ class SeaBattleGame {
     }
   }
   
+  /**
+   * Handles the end of the game, determining the winner and displaying the final message.
+   */
   endGame() {
     try {
       const endState = this.gameLogic.checkGameEnd(this.gameState);

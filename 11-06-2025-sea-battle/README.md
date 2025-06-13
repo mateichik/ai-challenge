@@ -11,6 +11,27 @@ You play against a CPU opponent. Both players place their ships on a 10x10 grid.
 - `X` represents a hit (on either board).
 - `O` represents a miss (on either board).
 
+## Architecture
+
+This project follows a modular, class-based architecture to separate concerns and improve maintainability. The core components are:
+
+- **`SeaBattleGame`**: The main controller class that orchestrates the entire game flow.
+- **`GameLogic`**: Handles the core rules of the game, such as ship placement, hit detection, and win conditions.
+- **`GameState`**: Manages the state of the game, including players, boards, and game status.
+- **`Player` / `AIPlayer`**: Represent the human and CPU players, managing their ships, guesses, and actions.
+- **`Board`**: Represents the game grid and provides methods for interacting with it.
+- **`Ship`**: Represents a single ship with its locations and hit status.
+- **`GameDisplay`**: Manages all output to the console.
+- **`InputHandler`**: Handles all user input from the command line.
+
+## Project Structure
+
+The codebase is organized into the following directories:
+
+- **`/src`**: Contains all the source code for the game, with each class in its own module.
+- **`/test`**: Contains all the unit and integration tests for the game logic.
+- **`/docs`**: Contains documentation files, including the refactoring strategy.
+
 ## How to Run
 
 1.  **Ensure you have Node.js installed.** You can download it from [https://nodejs.org/](https://nodejs.org/).
