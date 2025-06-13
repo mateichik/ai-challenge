@@ -64,26 +64,6 @@ class Ship {
   getRemainingHealth() {
     return this.#length - this.getHitCount();
   }
-
-  // For backward compatibility - convert to old format (temporary for transition)
-  _toLegacyFormat() {
-    return {
-      locations: [...this.#locations],
-      hits: [...this.#hits]
-    };
-  }
-
-  // Create Ship from legacy format
-  static fromLegacyFormat(legacyShip) {
-    const ship = new Ship(legacyShip.locations);
-    // Restore hit status
-    for (let i = 0; i < legacyShip.hits.length; i++) {
-      if (legacyShip.hits[i] === 'hit') {
-        ship.#hits[i] = 'hit';
-      }
-    }
-    return ship;
-  }
 }
 
 export { Ship }; 

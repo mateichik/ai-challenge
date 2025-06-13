@@ -98,15 +98,6 @@ class Board {
   }
 
   /**
-   * Gets direct reference to board array (for performance - use carefully)
-   * @returns {Array} Direct reference to board array
-   * @deprecated Use getBoardArray() instead
-   */
-  _getDirectBoardReference() {
-    return this.#boardArray;
-  }
-
-  /**
    * Clears the board (resets all cells to water)
    */
   clear() {
@@ -222,9 +213,9 @@ class Board {
     for (let h = 0; h < size; h++) header += h + ' ';
     output += header + '     ' + header + '\n';
 
-    // Get direct board references for performance
-    const opponentBoardArray = opponentBoard._getDirectBoardReference();
-    const playerBoardArray = playerBoard._getDirectBoardReference();
+    // Get board arrays for direct access
+    const opponentBoardArray = opponentBoard.getBoardArray();
+    const playerBoardArray = playerBoard.getBoardArray();
 
     // Board rows - use string builder approach
     const rows = [];
