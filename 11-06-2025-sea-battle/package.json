@@ -1,15 +1,18 @@
 {
-  "name": "sea-battle-game",
+  "name": "sea-battle",
   "version": "1.0.0",
   "description": "Console-based Sea Battle game with intelligent CPU opponent",
   "main": "src/seabattle.js",
   "type": "module",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "test:watch": "node --test --watch test/",
     "start": "node src/seabattle.js"
   },
   "keywords": ["battleship", "console-game", "ai", "strategy"],
   "author": "Sea Battle Development Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "sinon": "^18.0.0"
+  }
 } 

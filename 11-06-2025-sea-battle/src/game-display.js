@@ -13,8 +13,9 @@ class GameDisplay {
     console.error(message);
   }
 
-  showWelcome() {
-    this.showMessage('*** Welcome to Sea Battle! ***');
+  showWelcome(numShips) {
+    this.showMessage("\nLet's play Sea Battle!");
+    this.showMessage('Try to sink the ' + numShips + ' enemy ships.');
   }
 
   showGameEnd(message) {

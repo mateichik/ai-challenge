@@ -1,0 +1,12 @@
+{
+  "name": "original-codebase",
+  "version": "1.0.0",
+  "description": "This is a simple command-line interface (CLI) implementation of the classic Sea Battle (Battleship) game, written in JavaScript.",
+  "main": "seabattle.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

@@ -15,13 +15,15 @@ class SeaBattleGame {
   /**
    * Initializes all game components, including state, logic, display, and handlers.
    * Also caches frequently accessed properties for performance.
+   * @param {GameDisplay} display - The display handler for rendering output.
+   * @param {InputHandler} inputHandler - The handler for user input.
    */
-  constructor() {
+  constructor(display, inputHandler) {
     // Initialize components
     this.gameState = new GameState();
     this.gameLogic = new GameLogic();
-    this.display = new GameDisplay();
-    this.inputHandler = new InputHandler(this.display);
+    this.display = display || new GameDisplay();
+    this.inputHandler = inputHandler || new InputHandler(this.display);
     this.errorHandler = new ErrorHandler(this.display);
     this.errorBoundary = new ErrorBoundary(this.display);
     
@@ -48,7 +50,6 @@ class SeaBattleGame {
   async playGame() {
     const endTimer = performanceMonitor.startTimer('gameSession');
     try {
-      this.display.showWelcome();
       await this.initializeGame();
       await this.gameLoop();
       this.endGame();
@@ -73,6 +74,7 @@ class SeaBattleGame {
   async initializeGame() {
     const endTimer = performanceMonitor.startTimer('gameInitialization');
     
+    console.log('Boards created.');
     // Create boards
     const boards = createBoard(this._boardSize);
     this._player.setBoard(boards.playerBoardObject);
@@ -85,9 +87,11 @@ class SeaBattleGame {
     const cpuShips = this._cpu.getShips();
     
     this.gameLogic.placeShips(playerBoard, playerShips, 3, this._boardSize, this._shipLength, playerBoard);
-    this.display.showMessage('Player ships placed.');
+    this.display.showMessage('3 ships placed randomly for Player.');
     this.gameLogic.placeShips(cpuBoard, cpuShips, 3, this._boardSize, this._shipLength);
-    this.display.showMessage('CPU ships placed.');
+    this.display.showMessage('3 ships placed randomly for CPU.');
+
+    this.display.showWelcome(this.gameState.getCpu().getNumShips());
     
     // Use error boundary for UI rendering
     this.errorBoundary.renderSafely(() => {

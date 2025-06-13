@@ -5,6 +5,8 @@ import { Ship } from '../src/ship.js';
 import { GameDisplay } from '../src/game-display.js';
 import { Board } from '../src/board.js';
 import { InvalidCoordinateError, DuplicateGuessError } from '../src/game-errors.js';
+import { InputHandler } from '../src/input-handler.js';
+import readline from 'readline';
 
 // Mock GameDisplay to capture messages
 class MockDisplay {
@@ -183,6 +185,35 @@ test('Edge Case Tests', async (t) => {
     assert.equal(result.success, true);
     assert.equal(result.hit, true);
     assert.ok(display.getLastMessage().includes('already hit'));
+  });
+});
+
+test('Input Handler Prompt', async (t) => {
+  await t.test('should use the correct prompt text for user input', async () => {
+    let capturedPrompt = '';
+    
+    // Mock readline.createInterface to prevent it from actually creating an interface
+    const originalCreateInterface = readline.createInterface;
+    readline.createInterface = () => ({
+      question: (prompt, callback) => {
+        capturedPrompt = prompt;
+        callback('00');
+      },
+      close: () => {},
+    });
+
+    const display = new MockDisplay();
+    const inputHandler = new InputHandler(display);
+
+    try {
+      await inputHandler.getPlayerGuess();
+      assert.strictEqual(capturedPrompt, 'Enter your guess (e.g., 00): ', 'The prompt text does not match the original.');
+    } finally {
+      // Restore the original function
+      readline.createInterface = originalCreateInterface;
+      // Close the handler (which now uses the mock, so it does nothing, but is good practice)
+      inputHandler.close();
+    }
   });
 });
 

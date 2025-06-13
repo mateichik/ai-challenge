@@ -29,7 +29,7 @@ class InputHandler {
    */
   async getPlayerGuess() {
     return this._getInputWithRetries(
-      'Enter coordinates (row, column): ',
+      'Enter your guess (e.g., 00): ',
       this._validateGuessInput.bind(this),
       'Two digits (row, column)',
       'Default coordinates (0,0) will be used'

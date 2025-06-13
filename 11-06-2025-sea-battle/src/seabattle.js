@@ -6,12 +6,16 @@ import { Player } from './player.js';
 import { AIPlayer } from './ai-player.js';
 import { createBoard } from './board-utils.js';
 import { SeaBattleGame } from './sea-battle-game.js';
+import { GameDisplay } from './game-display.js';
+import { InputHandler } from './input-handler.js';
 
 /**
  * Main entry point for the Sea Battle game
  */
 async function main() {
-  const game = new SeaBattleGame();
+  const display = new GameDisplay();
+  const inputHandler = new InputHandler(display);
+  const game = new SeaBattleGame(display, inputHandler);
   await game.playGame();
 }
 
