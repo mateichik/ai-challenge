@@ -2,16 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import readline from 'node:readline';
 
-import {
-  GameConfig,
-  GameState,
-  GameLogic,
-  Ship,
-  Player,
-  AIPlayer,
-  createBoard,
-  SeaBattleGame
-} from '../seabattle.js';
+import { GameConfig } from '../src/game-config.js';
+import { GameState } from '../src/game-state.js';
+import { GameLogic } from '../src/game-logic.js';
+import { Ship } from '../src/ship.js';
+import { Player } from '../src/player.js';
+import { AIPlayer } from '../src/ai-player.js';
+import { SeaBattleGame } from '../src/sea-battle-game.js';
 import { Board } from '../src/board.js';
 import { GameDisplay } from '../src/game-display.js';
 import { InputHandler } from '../src/input-handler.js';

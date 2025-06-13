@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GameLogic, Ship } from '../seabattle.js';
+import { GameLogic } from '../src/game-logic.js';
+import { Ship } from '../src/ship.js';
 import { GameDisplay } from '../src/game-display.js';
 import { Board } from '../src/board.js';
 import { InvalidCoordinateError, DuplicateGuessError } from '../src/game-errors.js';

@@ -15,10 +15,22 @@ You play against a CPU opponent. Both players place their ships on a 10x10 grid.
 
 1.  **Ensure you have Node.js installed.** You can download it from [https://nodejs.org/](https://nodejs.org/).
 2.  **Navigate to the project directory** in your terminal.
-3.  **Run the game** using the command:
+3.  **Install dependencies** by running:
     ```bash
-    node seabattle.js
+    npm install
     ```
-4.  **Follow the prompts** to enter your guesses (e.g., `00` for the top-left corner, `99` for the bottom-right).
+4.  **Run the game** using the command:
+    ```bash
+    npm start
+    ```
+5.  **Follow the prompts** to enter your guesses (e.g., `00` for the top-left corner, `99` for the bottom-right).
+
+## How to Test
+
+To run the automated tests, navigate to the project directory and use the following command:
+
+```bash
+npm test
+```
 
 Enjoy the game! 

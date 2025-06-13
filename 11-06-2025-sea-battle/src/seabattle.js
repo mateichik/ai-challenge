@@ -1,11 +1,11 @@
-import { GameConfig } from './src/game-config.js';
-import { GameState } from './src/game-state.js';
-import { GameLogic } from './src/game-logic.js';
-import { Ship } from './src/ship.js';
-import { Player } from './src/player.js';
-import { AIPlayer } from './src/ai-player.js';
-import { createBoard } from './src/board-utils.js';
-import { SeaBattleGame } from './src/sea-battle-game.js';
+import { GameConfig } from './game-config.js';
+import { GameState } from './game-state.js';
+import { GameLogic } from './game-logic.js';
+import { Ship } from './ship.js';
+import { Player } from './player.js';
+import { AIPlayer } from './ai-player.js';
+import { createBoard } from './board-utils.js';
+import { SeaBattleGame } from './sea-battle-game.js';
 
 /**
  * Main entry point for the Sea Battle game

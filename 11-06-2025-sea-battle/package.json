@@ -2,12 +2,12 @@
   "name": "sea-battle-game",
   "version": "1.0.0",
   "description": "Console-based Sea Battle game with intelligent CPU opponent",
-  "main": "seabattle.js",
+  "main": "src/seabattle.js",
   "type": "module",
   "scripts": {
     "test": "node --test test/",
     "test:watch": "node --test --watch test/",
-    "start": "node seabattle.js"
+    "start": "node src/seabattle.js"
   },
   "keywords": ["battleship", "console-game", "ai", "strategy"],
   "author": "Sea Battle Development Team",

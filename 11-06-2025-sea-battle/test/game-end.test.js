@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GameState, Player, AIPlayer, Ship } from '../seabattle.js';
+import { GameState } from '../src/game-state.js';
+import { Player } from '../src/player.js';
+import { AIPlayer } from '../src/ai-player.js';
+import { Ship } from '../src/ship.js';
 import { Board } from '../src/board.js';
 import { MockDisplay } from './input-validation.test.js';
 

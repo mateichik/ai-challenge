@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GameConfig, GameLogic, Ship } from '../seabattle.js';
+import { GameConfig } from '../src/game-config.js';
+import { GameLogic } from '../src/game-logic.js';
+import { Ship } from '../src/ship.js';
 import { Board } from '../src/board.js';
 
 test('Board Configuration Tests', async (t) => {
