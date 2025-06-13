@@ -50,32 +50,45 @@ test('AI Player Tests', async (t) => {
   });
   
   // REQ-049, REQ-050, REQ-051: CPU should switch to target mode after hit
-  await t.test('should switch to target mode after hit', () => {
-    // Create a test ship at a specific location
-    const singleLocationShip = new Ship(['55']);
-    const testShips = [singleLocationShip];
-    
-    // Make sure CPU guesses this location to trigger a hit
-    // We'll mock the random number generation to ensure it hits
-    const originalRandom = Math.random;
-    Math.random = () => 0.5; // This should generate row=5, col=5
-    
-    try {
-      // This should cause a hit and switch to target mode
-      const result = cpu.calculateNextMove(testShips, playerBoard, 10, display);
-      
-      // Verify hit was detected
-      assert.equal(result.hit, true);
-      
-      // Check that the mode is now 'target'
-      // Note: In the actual implementation, the mode might switch back to 'hunt' if the ship is sunk
-      // So we need to check if the ship was sunk
-      if (!result.sunk) {
-        assert.equal(cpu.getMode(), 'target');
-      }
-    } finally {
-      Math.random = originalRandom;
-    }
+  await t.test('should switch to target mode after a non-sinking hit', () => {
+    // A ship that requires multiple hits to sink
+    const multiHitShip = new Ship(['55', '56']);
+    const testShips = [multiHitShip];
+    const testBoard = new Board(10);
+    // Directly manipulate the AI to ensure it 'guesses' 55
+    // This avoids mocking Math.random and potential flakiness
+    cpu.addGuess('55');
+    const result = cpu._processGuessResult(
+      { guessStr: '55', guessRow: 5, guessCol: 5 },
+      testShips,
+      testBoard,
+      display
+    );
+    assert.strictEqual(result.hit, true, 'The guess should be a hit.');
+    assert.strictEqual(result.sunk, false, 'The ship should not be sunk yet.');
+    assert.strictEqual(cpu.getMode(), 'target', "CPU should be in 'target' mode.");
+    assert.ok(cpu.getTargetQueue().length > 0, 'Target queue should be populated.');
+  });
+  
+  // New test: REQ-051: CPU should use the target queue in target mode
+  await t.test('should use the target queue for its next guess in target mode', () => {
+    const multiHitShip = new Ship(['55', '56']);
+    const testShips = [multiHitShip];
+    const testBoard = new Board(10);
+    // Force a hit on '55' to enter 'target' mode
+    cpu.addGuess('55');
+    cpu._processGuessResult(
+      { guessStr: '55', guessRow: 5, guessCol: 5 },
+      testShips,
+      testBoard,
+      display
+    );
+    assert.strictEqual(cpu.getMode(), 'target');
+    const targetQueue = cpu.getTargetQueue();
+    // The next move should come from the target queue
+    const nextMoveResult = cpu.calculateNextMove(testShips, testBoard, 10, display);
+    const lastGuess = cpu.getGuesses().pop();
+    assert.ok(targetQueue.includes(lastGuess), 'The next guess must come from the target queue.');
   });
   
   // REQ-052, REQ-053: CPU should filter invalid coordinates from target queue
@@ -101,19 +114,30 @@ test('AI Player Tests', async (t) => {
   });
   
   // REQ-054, REQ-055: CPU should return to hunt mode after ship is sunk
-  await t.test('should return to hunt mode after ship is sunk', () => {
-    // Set up a ship that will be sunk with one hit
-    const singleHitShip = new Ship(['00']);
-    playerShips = [singleHitShip];
-    
-    // Force the CPU to hit and sink the ship
-    cpu.calculateNextMove(playerShips, playerBoard, 10, display);
-    
-    // Verify mode switched back to hunt
-    assert.equal(cpu.getMode(), 'hunt');
-    
-    // Verify target queue is cleared
-    assert.equal(cpu.getTargetQueue().length, 0);
+  await t.test('should return to hunt mode after a multi-hit ship is sunk', () => {
+    const multiHitShip = new Ship(['77', '78']);
+    const testShips = [multiHitShip];
+    const testBoard = new Board(10);
+    // First hit
+    cpu.addGuess('77');
+    cpu._processGuessResult(
+      { guessStr: '77', guessRow: 7, guessCol: 7 },
+      testShips,
+      testBoard,
+      display
+    );
+    assert.strictEqual(cpu.getMode(), 'target', 'Should be in target mode after first hit.');
+    // Second and final hit
+    cpu.addGuess('78');
+    const finalResult = cpu._processGuessResult(
+      { guessStr: '78', guessRow: 7, guessCol: 8 },
+      testShips,
+      testBoard,
+      display
+    );
+    assert.strictEqual(finalResult.sunk, true, 'Ship should be sunk.');
+    assert.strictEqual(cpu.getMode(), 'hunt', 'Should return to hunt mode after sinking a ship.');
+    assert.strictEqual(cpu.getTargetQueue().length, 0, 'Target queue should be empty after sinking.');
   });
   
   // EDGE-015: CPU target queue becomes empty while in target mode
