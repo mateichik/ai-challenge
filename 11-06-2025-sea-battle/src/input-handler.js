@@ -4,68 +4,54 @@
 import readline from 'node:readline';
 import { validateInputFormat, validateRequired } from './validation.js';
 import { InputFormatError } from './game-errors.js';
-import { ErrorHandler } from './error-handler.js';
 
 class InputHandler {
   /**
    * Creates a new InputHandler instance
    * @param {Object} display - Display instance for showing messages
+   * @param {Object} game - Reference to the game instance for rendering boards
    */
-  constructor(display) {
+  constructor(display, game = null) {
     validateRequired(display, 'display');
     
     this.display = display;
-    this.errorHandler = new ErrorHandler(display);
+    this.game = game;
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
-    this.maxRetries = 3;
+  }
+
+  /**
+   * Sets the game reference after initialization
+   * @param {Object} game - Reference to the game instance
+   */
+  setGame(game) {
+    this.game = game;
   }
 
   /**
    * Gets a validated player guess
    * @returns {Promise<string>} - Validated coordinate string (e.g., '23')
+   * @throws {InputFormatError} - If input format is invalid
    */
   async getPlayerGuess() {
-    return this._getInputWithRetries(
-      'Enter your guess (e.g., 00): ',
-      this._validateGuessInput.bind(this),
-      'Two digits (row, column)',
-      'Default coordinates (0,0) will be used'
-    );
-  }
-
-  /**
-   * Gets input with retry mechanism and graceful degradation
-   * @param {string} prompt - Prompt to display
-   * @param {Function} validationFn - Validation function
-   * @param {string} formatDescription - Description of expected format
-   * @param {string} fallbackMessage - Message to display when using fallback
-   * @param {*} fallbackValue - Value to use as fallback
-   * @returns {Promise<*>} - Validated input or fallback value
-   * @private
-   */
-  async _getInputWithRetries(prompt, validationFn, formatDescription, fallbackMessage, fallbackValue = '00') {
-    let retries = 0;
-    
-    while (retries < this.maxRetries) {
+    while (true) {
       try {
-        const input = await this._promptUser(prompt);
-        return validationFn(input);
+        const input = await this._promptUser('Enter your guess (e.g., 00): ');
+        return this._validateGuessInput(input);
       } catch (error) {
-        retries++;
-        this.errorHandler.handleError(error, 'InputHandler');
+        // Use the exact error message from the original codebase
+        console.log('Oops, input must be exactly two digits (e.g., 00, 34, 98).');
         
-        if (retries < this.maxRetries) {
-          this.display.showMessage(`Please try again. ${this.maxRetries - retries} attempts remaining.`);
+        // Re-render boards after error message but before next prompt
+        if (this.game) {
+          this.game.renderBoards();
         }
+        
+        // Continue the loop to prompt again - no retry limit
       }
     }
-    
-    // Graceful degradation - use fallback value
-    this.display.showMessage(`Maximum retry attempts reached. ${fallbackMessage}.`);
-    return fallbackValue;
   }
 
   /**
@@ -103,11 +89,9 @@ class InputHandler {
     const cleanInput = input.replace(/[\s,]/g, '');
     
     // Validate input format (two digits)
-    validateInputFormat(
-      cleanInput, 
-      /^\d{2}$/, 
-      'Two digits (row, column)'
-    );
+    if (!/^\d{2}$/.test(cleanInput)) {
+      throw new InputFormatError(cleanInput, 'Two digits (row, column)');
+    }
 
     return cleanInput;
   }

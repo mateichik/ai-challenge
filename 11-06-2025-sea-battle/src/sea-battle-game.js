@@ -13,6 +13,17 @@ import { performanceMonitor } from './performance-monitor.js';
  */
 class SeaBattleGame {
   /**
+   * Renders the current state of both game boards.
+   * This can be called from anywhere to update the display.
+   */
+  renderBoards() {
+    if (!this._cpu || !this._player) return; // Safety check during initialization
+    this.errorBoundary.renderSafely(() => {
+      this.display.renderBoards(this._cpu.getBoard(), this._player.getBoard());
+    });
+  }
+
+  /**
    * Initializes all game components, including state, logic, display, and handlers.
    * Also caches frequently accessed properties for performance.
    * @param {GameDisplay} display - The display handler for rendering output.
@@ -23,7 +34,7 @@ class SeaBattleGame {
     this.gameState = new GameState();
     this.gameLogic = new GameLogic();
     this.display = display || new GameDisplay();
-    this.inputHandler = inputHandler || new InputHandler(this.display);
+    this.inputHandler = inputHandler || new InputHandler(this.display, this);
     this.errorHandler = new ErrorHandler(this.display);
     this.errorBoundary = new ErrorBoundary(this.display);
     
@@ -32,6 +43,11 @@ class SeaBattleGame {
     this._shipLength = this.gameState.getShipLength();
     this._player = this.gameState.getPlayer();
     this._cpu = this.gameState.getCpu();
+    
+    // Set this game instance on the input handler if the method exists
+    if (this.inputHandler && typeof this.inputHandler.setGame === 'function') {
+      this.inputHandler.setGame(this);
+    }
     
     // Apply performance monitoring to critical methods
     if (process.env.ENABLE_PERFORMANCE_MONITORING === 'true') {
@@ -108,7 +124,7 @@ class SeaBattleGame {
     
     while (!gameOver) {
       try {
-        // Render the boards at the start of each turn, just like the original game.
+        // Render the boards before asking for input
         this.errorBoundary.renderSafely(() => {
           this.display.renderBoards(this._cpu.getBoard(), this._player.getBoard());
         });
@@ -136,7 +152,7 @@ class SeaBattleGame {
   async playerTurn() {
     const endTimer = performanceMonitor.startTimer('playerTurn');
     try {
-      // Get player guess
+      // Get player guess - boards are already rendered in gameLoop
       let guess = await this.inputHandler.getPlayerGuess();
 
       // Cache local references to avoid repeated property lookups
@@ -157,9 +173,9 @@ class SeaBattleGame {
           'player',
           this.display
       );
-      
+       
       if (result.sunk) {
-          cpu.decrementNumShips();
+        cpu.decrementNumShips();
       }
       return true; // Turn was successful
     } catch (error) {
