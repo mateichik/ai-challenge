@@ -22,7 +22,7 @@ describe('Validator Classes', () => {
 
     test('should fail for non-string values', () => {
       const validator = new StringValidator();
-      const result = validator.validate(123);
+      const result = validator.validate(123 as any);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Value must be a string']);
     });
@@ -59,16 +59,16 @@ describe('Validator Classes', () => {
 
     test('should be optional', () => {
       const validator = new StringValidator().optional();
-      const result1 = validator.validate(undefined);
+      const result1 = validator.validate(undefined as any);
       assert.equal(result1.valid, true);
       
-      const result2 = validator.validate(null);
+      const result2 = validator.validate(null as any);
       assert.equal(result2.valid, true);
     });
 
     test('should use custom error message', () => {
       const validator = new StringValidator().withMessage('Custom error');
-      const result = validator.validate(123);
+      const result = validator.validate(123 as any);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Custom error']);
     });
@@ -84,14 +84,14 @@ describe('Validator Classes', () => {
 
     test('should fail for non-number values', () => {
       const validator = new NumberValidator();
-      const result = validator.validate('123');
+      const result = validator.validate('123' as any);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Value must be a number']);
     });
 
     test('should be optional', () => {
       const validator = new NumberValidator().optional();
-      const result = validator.validate(undefined);
+      const result = validator.validate(undefined as any);
       assert.equal(result.valid, true);
     });
   });
@@ -106,14 +106,14 @@ describe('Validator Classes', () => {
 
     test('should fail for non-boolean values', () => {
       const validator = new BooleanValidator();
-      const result = validator.validate('true');
+      const result = validator.validate('true' as any);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Value must be a boolean']);
     });
 
     test('should be optional', () => {
       const validator = new BooleanValidator().optional();
-      const result = validator.validate(undefined);
+      const result = validator.validate(undefined as any);
       assert.equal(result.valid, true);
     });
   });
@@ -136,14 +136,14 @@ describe('Validator Classes', () => {
 
     test('should fail for non-Date values', () => {
       const validator = new DateValidator();
-      const result = validator.validate('2023-01-01');
+      const result = validator.validate('2023-01-01' as any);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Value must be a valid Date']);
     });
 
     test('should be optional', () => {
       const validator = new DateValidator().optional();
-      const result = validator.validate(undefined);
+      const result = validator.validate(undefined as any);
       assert.equal(result.valid, true);
     });
   });
@@ -166,7 +166,7 @@ describe('Validator Classes', () => {
         age: new NumberValidator()
       };
       const validator = new ObjectValidator(schema);
-      const result = validator.validate({ name: 'John', age: '30' });
+      const result = validator.validate({ name: 'John', age: '30' as any });
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['age: Value must be a number']);
     });
@@ -177,7 +177,7 @@ describe('Validator Classes', () => {
         age: new NumberValidator()
       };
       const validator = new ObjectValidator(schema);
-      const result = validator.validate('not an object');
+      const result = validator.validate('not an object' as any);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Value must be an object']);
     });
@@ -188,7 +188,7 @@ describe('Validator Classes', () => {
         age: new NumberValidator()
       };
       const validator = new ObjectValidator(schema).optional();
-      const result = validator.validate(undefined);
+      const result = validator.validate(undefined as any);
       assert.equal(result.valid, true);
     });
   });
@@ -203,21 +203,21 @@ describe('Validator Classes', () => {
 
     test('should fail for an array with invalid items', () => {
       const validator = new ArrayValidator(new StringValidator());
-      const result = validator.validate(['a', 123, 'c']);
+      const result = validator.validate(['a', 123 as any, 'c']);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Item at index 1: Value must be a string']);
     });
 
     test('should fail for non-array values', () => {
       const validator = new ArrayValidator(new StringValidator());
-      const result = validator.validate('not an array');
+      const result = validator.validate('not an array' as any);
       assert.equal(result.valid, false);
       assert.deepEqual(result.errors, ['Value must be an array']);
     });
 
     test('should be optional', () => {
       const validator = new ArrayValidator(new StringValidator()).optional();
-      const result = validator.validate(undefined);
+      const result = validator.validate(undefined as any);
       assert.equal(result.valid, true);
     });
   });

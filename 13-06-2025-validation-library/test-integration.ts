@@ -45,16 +45,16 @@ describe('Validation Library Integration', () => {
 
     // Invalid user data with multiple errors
     const invalidUser = {
-      id: 12345, // Should be a string
+      id: 12345 as any, // Should be a string
       name: "J", // Too short
       email: "not-an-email", // Invalid email
-      isActive: "yes", // Should be a boolean
-      tags: ["developer", 123], // Array with invalid item
+      isActive: "yes" as any, // Should be a boolean
+      tags: ["developer", 123 as any], // Array with invalid item
       address: {
         street: "123 Main St",
         city: "Anytown",
         postalCode: "ABC", // Invalid postal code
-        country: 123 // Should be a string
+        country: 123 as any // Should be a string
       }
     };
 
@@ -122,7 +122,12 @@ describe('Validation Library Integration', () => {
   });
 
   test('should validate arrays with complex item validators', () => {
-    const personSchema = Schema.object({
+    interface Person {
+      name: string;
+      age: number;
+    }
+
+    const personSchema = Schema.object<Person>({
       name: Schema.string(),
       age: Schema.number()
     });
@@ -140,8 +145,8 @@ describe('Validation Library Integration', () => {
     // Invalid array
     const invalidPeople = [
       { name: 'Alice', age: 30 },
-      { name: 'Bob', age: 'twenty-five' }, // Age should be a number
-      { name: 123, age: 40 } // Name should be a string
+      { name: 'Bob', age: 'twenty-five' as any }, // Age should be a number
+      { name: 123 as any, age: 40 } // Name should be a string
     ];
     const invalidResult = peopleSchema.validate(invalidPeople);
     assert.equal(invalidResult.valid, false);

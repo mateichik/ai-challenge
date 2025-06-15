@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "test": "npm run test:validators && npm run test:schema && npm run test:integration",
-    "test:validators": "node --experimental-strip-types test-validators.js",
-    "test:schema": "node --experimental-strip-types test-schema.js",
-    "test:integration": "node --experimental-strip-types test-integration.js",
+    "test:validators": "node --experimental-strip-types test-validators.ts",
+    "test:schema": "node --experimental-strip-types test-schema.ts",
+    "test:integration": "node --experimental-strip-types test-integration.ts",
     "start": "node --experimental-strip-types index.ts"
   },
   "author": "",

@@ -84,8 +84,8 @@ describe('Schema Builder', () => {
     const invalidUser = {
       name: 'J', // Too short
       email: 'not-an-email',
-      age: '30', // Should be a number
-      isActive: 'yes', // Should be a boolean
+      age: '30' as any, // Should be a number
+      isActive: 'yes' as any, // Should be a boolean
       address: {
         street: '123 Main St',
         city: 'Anytown',
@@ -119,7 +119,7 @@ describe('Schema Builder', () => {
 
     // Invalid data
     const invalidData = [
-      ['a', 'b', 123], // Contains a non-string
+      ['a', 'b', 123 as any], // Contains a non-string
       ['d', 'e', 'f']
     ];
 

@@ -16,8 +16,8 @@ A comprehensive validation library for JavaScript/TypeScript objects with a flue
 
 ## Usage
 
-```javascript
-import { Schema } from './schema.js';
+```typescript
+import { Schema } from './schema.ts';
 
 // Define a schema
 const userSchema = Schema.object({
@@ -74,6 +74,8 @@ The test suite includes:
 - Integration tests for complex validation scenarios
 - Tests for both valid and invalid inputs
 - Edge case handling
+
+All tests are written in TypeScript and run directly using Node.js native test runner with type stripping.
 
 ## Implementation Details
 
