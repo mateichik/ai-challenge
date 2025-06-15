@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { Schema } from './schema.ts';
+import { Schema } from '../src/schema.ts';
 import {
   StringValidator,
   NumberValidator,
@@ -9,8 +9,14 @@ import {
   DateValidator,
   ObjectValidator,
   ArrayValidator
-} from './validators.ts';
+} from '../src/validators.ts';
 
+/**
+ * Tests for the Schema builder class
+ * 
+ * This file contains tests for the Schema builder class, ensuring
+ * that it correctly creates and configures validator instances.
+ */
 describe('Schema Builder', () => {
   test('Schema.string() should return a StringValidator', () => {
     const validator = Schema.string();

@@ -9,8 +9,14 @@ import {
   DateValidator,
   ObjectValidator,
   ArrayValidator
-} from './validators.ts';
+} from '../src/validators.ts';
 
+/**
+ * Tests for the Validator classes
+ * 
+ * This file contains comprehensive tests for all validator classes,
+ * including both valid and invalid inputs, edge cases, and optional values.
+ */
 describe('Validator Classes', () => {
   describe('StringValidator', () => {
     test('should validate a string', () => {

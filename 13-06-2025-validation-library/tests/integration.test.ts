@@ -1,8 +1,14 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { Schema } from './schema.ts';
+import { Schema } from '../src/schema.ts';
 
+/**
+ * Integration tests for the validation library
+ * 
+ * This file contains tests that verify the integration between
+ * different components of the validation library.
+ */
 describe('Validation Library Integration', () => {
   test('should validate a complex schema with nested objects and arrays', () => {
     // Define a complex schema similar to the one in index.ts
@@ -14,13 +20,24 @@ describe('Validation Library Integration', () => {
     });
 
     const userSchema = Schema.object({
+      // Basic field validations
       id: Schema.string().withMessage('ID must be a string'),
       name: Schema.string().minLength(2).maxLength(50),
       email: Schema.string().pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+      
+      // Optional fields
       age: Schema.number().optional(),
+      
+      // Boolean validation
       isActive: Schema.boolean(),
+      
+      // Array validation
       tags: Schema.array(Schema.string()),
+      
+      // Nested object validation (optional)
       address: addressSchema.optional(),
+      
+      // Empty object validation (optional)
       metadata: Schema.object({}).optional()
     });
 

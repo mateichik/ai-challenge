@@ -14,10 +14,27 @@ A comprehensive validation library for JavaScript/TypeScript objects with a flue
 - Custom error messages
 - Nested validation for complex objects
 
+## Project Structure
+
+```
+validation-library/
+├── src/                  # Source code
+│   ├── validators.ts     # Core validator classes
+│   ├── schema.ts         # Schema builder
+│   └── index.ts          # Example usage
+├── tests/                # Test files
+│   ├── validators.test.ts # Tests for validators
+│   ├── schema.test.ts     # Tests for schema builder
+│   └── integration.test.ts # Integration tests
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
 ## Usage
 
 ```typescript
-import { Schema } from './schema.ts';
+import { Schema } from './src/schema.js';
 
 // Define a schema
 const userSchema = Schema.object({
@@ -47,6 +64,12 @@ This project uses Node.js native TypeScript type stripping and test runner witho
 
 ```bash
 npm start
+```
+
+### Building the Project
+
+```bash
+npm run build
 ```
 
 ### Running Tests
