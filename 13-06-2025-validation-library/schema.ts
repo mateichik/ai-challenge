@@ -1,5 +1,7 @@
+import { Validator, StringValidator, NumberValidator, BooleanValidator, DateValidator, ObjectValidator, ArrayValidator } from './validators.ts';
+
 // Schema Builder
-class Schema {
+export class Schema {
   static string(): StringValidator {
     return new StringValidator();
   }
