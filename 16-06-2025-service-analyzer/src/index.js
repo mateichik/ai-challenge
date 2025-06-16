@@ -81,8 +81,8 @@ async function main() {
     // Analyze service using OpenAI
     const analysis = await analyzeService(input, inputType);
     
-    // Generate markdown
-    const markdown = generateMarkdown(analysis);
+    // Generate markdown (including original prompt)
+    const markdown = generateMarkdown(analysis, input);
     
     // Save markdown to file
     const filePath = saveMarkdown(markdown, analysis.serviceName);

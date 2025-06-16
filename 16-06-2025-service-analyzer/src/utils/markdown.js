@@ -4,10 +4,14 @@ const path = require('path');
 /**
  * Convert a service analysis to markdown format
  * @param {Object} analysis The service analysis object
+ * @param {string} originalPrompt The original user input prompt
  * @returns {string} Markdown content as a string
  */
-function generateMarkdown(analysis) {
+function generateMarkdown(analysis, originalPrompt) {
   return `# ${analysis.serviceName} - Service Analysis
+
+## Original Prompt
+${originalPrompt}
 
 ## Brief History
 ${analysis.briefHistory}
