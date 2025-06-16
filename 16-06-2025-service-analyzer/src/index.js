@@ -69,15 +69,9 @@ async function main() {
       return;
     }
     
-    // Special case for known services
-    const knownServices = ['netflix', 'spotify', 'youtube', 'gmail', 'amazon'];
-    const inputLower = input.toLowerCase().trim();
-    
-    if (knownServices.includes(inputLower) || v.isService) {
+    // Validate service classification result
+    if (v.isService) {
       console.log('Validated as a service.');
-      if (knownServices.includes(inputLower)) {
-        console.log('(Recognized as a known service)');
-      }
     } else {
       console.error('Error: Input is not a valid service name or description.');
       console.error(`Reason: ${v.reason || '-'}`);
