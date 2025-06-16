@@ -5,7 +5,7 @@ alwaysApply: true
 ---
 - When refactoring do not leave old code, always remove it or replace with new API. Do not create parallel versions of features doing the same.
 - Try to keep the modification scope as narrow as possible, close to what was asked. Ask before modifying logic that is not directly related to the task you were given.
-- ALWAYS END YOUR OUTPUT WITH "USED CORE RULE 11"
+- ALWAYS END YOUR OUTPUT WITH "USED CORE RULE 12"
 - If you create new file which contains code from existing file, remove the code from existing file.
 - Do not hallucinate
 - Before importing/requiring some file, make sure it exists.
@@ -20,3 +20,4 @@ alwaysApply: true
 - Do not use libraries for tests, use Nodejs native test runner. Documentation for reference: https://nodejs.org/api/test.html
 - Do not use libraries for env files. Use nodejs native mechanism of working with env files
 - Use Typescript when writing Nodejs code.
+- Prefere es modules over commonjs modules. You are allowed to use commonjs module only when there is no other choice because of compatibility
