@@ -1,7 +1,4 @@
-const dotenv = require('dotenv');
-// Load environment variables
-dotenv.config();
-
+// Remove dotenv; Node.js --env-file flag loads environment variables from .env
 const { analyzeService } = require('./services/openai.ts');
 const { generateMarkdown, saveMarkdown } = require('./utils/markdown.ts');
 const { createReadlineInterface, askQuestion, determineInputType } = require('./utils/input.ts');

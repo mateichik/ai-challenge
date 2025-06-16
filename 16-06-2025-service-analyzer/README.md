@@ -37,9 +37,11 @@ The generated Markdown file includes the following sections:
 
 Run the application with:
 
-```
+```bash
 npm start
 ```
+
+This uses the Node.js native `--env-file` flag to load environment variables from the `.env` file.
 
 The application will:
 1. Prompt you to enter a service name or description
