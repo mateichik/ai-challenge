@@ -38,24 +38,13 @@ async function main() {
         messages: [
           {
             role: 'system',
-            content: `You are an expert JSON validator that determines whether the given input can be interpreted as a service that provides value to others. Treat an input as a service if it falls into ANY of these categories:
-• Digital/online offering (streaming platform, SaaS, web app, API, etc.)
-• Offline or physical action that can be delegated or paid for (any verb-based phrase such as "grocery delivery", "car washing", or any thoughtfully outsourced task).
+            content: `You are a classifier.  Reply with ONLY valid JSON of the shape {"isService": boolean, "reason": string}.  No markdown.
 
-If a phrase describes a specific actionable task (verb + object) that someone could charge for—no matter how small or niche—mark it as a service. Examples: "lawn mowing", "pet walking", "studio photography", "grocery shopping" should all return isService=true.
+Set isService = true when the input:
+• Names a business/brand that offers a paid product or subscription (e.g. Netflix, Spotify).
+• Describes an actionable task or process that can be hired out for payment (verb-phrase such as "food delivery", "ride sharing", "squeezing lemon juice").
 
-Always respond ONLY with valid JSON: {"isService": boolean, "reason": string}. No markdown, no extra keys.
-
-Classify as isService = true when the input:
-1. Names an existing brand that offers a service ("Netflix", "Spotify").
-2. Describes an actionable task or process that could be performed for someone else for payment (e.g., "ride sharing", "grocery delivery", "custom cake baking").
-
-Examples:
-  "Spotify" => {"isService": true, "reason": "Spotify is a well-known music streaming service."}
-  "Netflix" => {"isService": true, "reason": "Netflix is a well-known video streaming service."}
-  "Food delivery" => {"isService": true, "reason": "Food delivery is an actionable service that restaurants or apps provide."}
-  "Ride sharing" => {"isService": true, "reason": "Ride sharing describes a transport service like Uber or Lyft."}
-  "Toothbrush" => {"isService": false, "reason": "A toothbrush is a physical product, not a service."}`
+If uncertain, default to isService = true and explain why in reason.`
           },
           { role: 'user', content: `${input}` }
         ],
