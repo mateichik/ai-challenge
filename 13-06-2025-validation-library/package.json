@@ -10,7 +10,8 @@
     "test": "npm run test:validators && npm run test:schema && npm run test:integration",
     "test:validators": "node --experimental-strip-types tests/validators.test.ts",
     "test:schema": "node --experimental-strip-types tests/schema.test.ts",
-    "test:integration": "node --experimental-strip-types tests/integration.test.ts"
+    "test:integration": "node --experimental-strip-types tests/integration.test.ts",
+    "test:coverage": "node --experimental-strip-types --experimental-test-coverage tests/validators.test.ts tests/schema.test.ts tests/integration.test.ts"
   },
   "author": "",
   "license": "ISC",

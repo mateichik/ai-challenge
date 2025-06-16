@@ -253,6 +253,12 @@ npm run test:schema      # Test schema builder
 npm run test:integration # Test integration scenarios
 ```
 
+Run tests with coverage reporting:
+
+```bash
+npm run test:coverage
+```
+
 ## Test Coverage
 
 The test suite includes:
