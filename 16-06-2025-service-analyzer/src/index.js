@@ -23,7 +23,7 @@ async function main() {
       return;
     }
     
-    // Validate input as a service using AI
+    // Validate input as a service using AI with reasoning
     console.log('\nValidating input as a service...');
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -40,7 +40,7 @@ async function main() {
       body: JSON.stringify({
         model: 'gpt-4.1-mini',
         messages: [
-          { role: 'user', content: `Respond only with JSON {"isService": boolean}. Is this input a service name or description? Input: "${input}"` }
+          { role: 'user', content: `Respond only with JSON {"isService": boolean, "reason": string}. Provide brief reasoning. If the input describes an action (e.g., a verb or phrase), decide whether this action can be offered as a service that provides value to others; set isService accordingly. Input: "${input}"` }
         ],
         temperature: 0
       })
@@ -53,9 +53,11 @@ async function main() {
     }
     const validationData = await validationRes.json();
     let isService = false;
+    let reason = '';
     try {
       const parsed = JSON.parse(validationData.choices?.[0]?.message?.content || '{}');
       isService = parsed.isService;
+      reason = parsed.reason;
     } catch {
       console.error('Error parsing validation response.');
       rl.close();
@@ -63,6 +65,7 @@ async function main() {
     }
     if (!isService) {
       console.log('Error: Input is not a valid service name or description.');
+      console.log(`Reason: ${reason || '-'}`);
       rl.close();
       return;
     }
