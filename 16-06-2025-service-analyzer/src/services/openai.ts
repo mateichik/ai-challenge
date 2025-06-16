@@ -1,10 +1,4 @@
-const { OpenAI } = require('openai');
 const { InputType } = require('../types/index.ts');
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 /**
  * Analyze a service using OpenAI
@@ -13,24 +7,39 @@ const openai = new OpenAI({
  * @returns ServiceAnalysis object
  */
 async function analyzeService(
-  input, 
-  inputType
-) {
+  input: string,
+  inputType: string
+): Promise<any> {
   try {
     const systemPrompt = getSystemPrompt(inputType);
     const userPrompt = getUserPrompt(input, inputType);
-    
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.7,
+
+    // Call OpenAI API directly using fetch to minimize memory footprint
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('Missing OPENAI_API_KEY environment variable');
+    }
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7
+      })
     });
-    
-    const content = response.choices[0].message.content;
-    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`OpenAI API error: ${res.status} ${errorText}`);
+    }
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
     if (!content) {
       throw new Error('Empty response from OpenAI');
     }
@@ -46,7 +55,7 @@ async function analyzeService(
 /**
  * Get system prompt based on input type
  */
-function getSystemPrompt(inputType) {
+function getSystemPrompt(inputType: string): string {
   const basePrompt = `You are a service analyzer that extracts and generates insights about services. 
 Your task is to analyze the provided ${inputType === 'SERVICE_NAME' ? 'service name' : 'service description'} and generate a detailed analysis covering:
 
@@ -90,7 +99,7 @@ Apply reasoning to infer information not explicitly stated (e.g., deducing audie
 /**
  * Get user prompt based on input type
  */
-function getUserPrompt(input, inputType) {
+function getUserPrompt(input: string, inputType: string): string {
   if (inputType === 'SERVICE_NAME') {
     return `Please analyze the following service: ${input}`;
   } else {
@@ -101,7 +110,7 @@ function getUserPrompt(input, inputType) {
 /**
  * Parse OpenAI API response into ServiceAnalysis object
  */
-function parseOpenAIResponse(responseContent, originalInput) {
+function parseOpenAIResponse(responseContent: string, originalInput: string): any {
   try {
     // Try to parse as JSON
     const parsed = JSON.parse(responseContent);
