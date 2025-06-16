@@ -1,8 +1,7 @@
 // Thin CLI wrapper
 const { createReadlineInterface, askQuestion } = require('./utils/input.js');
 const { safeFetch } = require('./utils/safeFetch.js');
-const { runServiceAnalyzer } = require('./app.js');
-const { validationSystemPromptCLI } = require('./prompts/classifier.js');
+const { runServiceAnalyzer, validateInputIsService } = require('./app.js');
 
 /**
  * Main application flow
@@ -25,59 +24,21 @@ async function main() {
     
     // Validate input as a service using AI
     console.log('\nValidating input as a service...');
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      console.error('Error: OPENAI_API_KEY is missing.');
-      rl.close();
-      return;
-    }
-    const validationRes = await safeFetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: [
-          {
-            role: 'system',
-            content: validationSystemPromptCLI
-          },
-          { role: 'user', content: `${input}` }
-        ],
-        temperature: 0
-      })
-    });
-    if (!validationRes.ok) {
-      const err = await validationRes.text();
-      console.error(`Validation error: ${validationRes.status} ${err}`);
-      rl.close();
-      return;
-    }
-    // Get the full response data and log it for debugging
-    const validationData = await validationRes.json();
-
-    // Extract content from the response
-    const content = validationData.choices?.[0]?.message?.content;
-    let cleanContent = content ? content.replace(/```(?:json)?\n?/g, '').replace(/```/g, '').trim() : '{}';
-    
-    let v;
+    let validation;
     try {
-      v = JSON.parse(cleanContent);
-    } catch (e) {
-      console.error('Error parsing validation response:', e.message);
-      console.error('Content that failed parsing:', cleanContent);
+      validation = await validateInputIsService(input, safeFetch);
+    } catch (error) {
+      console.error('Validation error:', error.message);
       rl.close();
       return;
     }
-    
-    // Validate service classification result
-    if (v.isService) {
-      console.log('Validated as a service.');
-    } else {
+    if (!validation.isService) {
       console.error('Error: Input is not a valid service name or description.');
-      console.error(`Reason: ${v.reason || '-'}`);
+      console.error(`Reason: ${validation.reason || '-'}`);
       rl.close();
       return;
     }
+    console.log('Validated as a service.');
     
     // Analyze service using OpenAI
     console.log('\nAnalyzing service...');

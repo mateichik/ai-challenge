@@ -54,4 +54,4 @@ async function runServiceAnalyzer(input) {
   return filePath;
 }
 
-module.exports = { runServiceAnalyzer }; 
+module.exports = { runServiceAnalyzer, validateInputIsService }; 
