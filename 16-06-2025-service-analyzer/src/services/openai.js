@@ -1,5 +1,7 @@
 // Removed unnecessary type import
 
+const { safeFetch } = require('../utils/safeFetch.js');
+
 /**
  * Analyze a service using OpenAI
  * @param input The service name or description
@@ -16,7 +18,7 @@ async function analyzeService(input, inputType) {
     if (!apiKey) {
       throw new Error('Missing OPENAI_API_KEY environment variable');
     }
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await safeFetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

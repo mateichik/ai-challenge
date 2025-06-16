@@ -1,5 +1,6 @@
 // Thin CLI wrapper
 const { createReadlineInterface, askQuestion } = require('./utils/input.js');
+const { safeFetch } = require('./utils/safeFetch.js');
 const { runServiceAnalyzer } = require('./app.js');
 
 /**
@@ -29,7 +30,7 @@ async function main() {
       rl.close();
       return;
     }
-    const validationRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const validationRes = await safeFetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
