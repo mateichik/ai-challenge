@@ -1,4 +1,5 @@
 const { analyzeService } = require('./services/openai.js');
+const { validationSystemPrompt } = require('./prompts/classifier.js');
 const { generateMarkdown, saveMarkdown } = require('./utils/markdown.js');
 
 /**
@@ -21,7 +22,7 @@ async function validateInputIsService(input, fetchImpl = fetch) {
       messages: [
         {
           role: 'system',
-          content: `You are a classifier. Reply ONLY with {"isService":boolean,"reason":string}. Treat actionable tasks or known brands as services. If unsure default to true.`
+          content: validationSystemPrompt
         },
         { role: 'user', content: input }
       ],

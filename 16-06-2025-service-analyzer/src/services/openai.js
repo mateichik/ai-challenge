@@ -1,6 +1,7 @@
 // Removed unnecessary type import
 
 const { safeFetch } = require('../utils/safeFetch.js');
+const { getSystemPrompt, getUserPrompt } = require('../prompts/serviceAnalyzer.js');
 
 /**
  * Analyze a service using OpenAI
@@ -48,61 +49,6 @@ async function analyzeService(input, inputType) {
   } catch (error) {
     console.error('Error calling OpenAI API:', error);
     throw new Error(`Failed to analyze service: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * Get system prompt based on input type
- */
-function getSystemPrompt(inputType) {
-  const basePrompt = `You are a service analyzer that extracts and generates insights about services. 
-Your task is to analyze the provided ${inputType === 'SERVICE_NAME' ? 'service name' : 'service description'} and generate a detailed analysis covering:
-
-1. Brief History: Founding year, milestones, etc.
-2. Target Audience: Primary user segments
-3. Core Features: Top 2–4 key functionalities
-4. Unique Selling Points: Key differentiators
-5. Business Model: How the service makes money
-6. Tech Stack Insights: Any hints about technologies used
-7. Perceived Strengths: Mentioned positives or standout features
-8. Perceived Weaknesses: Cited drawbacks or limitations
-
-Format your response as pure JSON with the following structure:
-{
-  "serviceName": "The service name",
-  "briefHistory": "Brief history content...",
-  "targetAudience": "Target audience content...",
-  "coreFeatures": "Core features content...",
-  "uniqueSellingPoints": "Unique selling points content...",
-  "businessModel": "Business model content...",
-  "techStackInsights": "Tech stack insights content...",
-  "perceivedStrengths": "Perceived strengths content...",
-  "perceivedWeaknesses": "Perceived weaknesses content..."
-}
-
-Your response must be valid JSON that can be parsed by JSON.parse().`;
-
-  if (inputType === 'SERVICE_NAME') {
-    return `${basePrompt}
-
-For well-known services, use your knowledge to provide accurate information.
-If the service isn't well-known, make educated guesses based on the name and industry patterns.`;
-  } else {
-    return `${basePrompt}
-
-Analyze the provided service description to extract meaningful insights.
-Apply reasoning to infer information not explicitly stated (e.g., deducing audience or monetization from context).`;
-  }
-}
-
-/**
- * Get user prompt based on input type
- */
-function getUserPrompt(input, inputType) {
-  if (inputType === 'SERVICE_NAME') {
-    return `Please analyze the following service: ${input}`;
-  } else {
-    return `Please analyze the following service description: ${input}`;
   }
 }
 
