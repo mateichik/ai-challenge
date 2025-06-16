@@ -1,10 +1,13 @@
 // Remove dotenv; Node.js --env-file flag loads environment variables from .env
-const { createReadlineInterface, askQuestion, determineInputType } = require('./utils/input.js');
+const { createReadlineInterface, askQuestion } = require('./utils/input.js');
+const { analyzeService } = require('./services/openai.js');
+const { generateMarkdown, saveMarkdown } = require('./utils/markdown.js');
 
 /**
- * Main application function
+ * Main application flow
  */
 async function main() {
+  const rl = createReadlineInterface();
   try {
     console.log('Service Analyzer');
     console.log('===============');
@@ -12,18 +15,14 @@ async function main() {
     console.log('Enter a service name (e.g., "Spotify") or a service description.');
     console.log();
     
-    const rl = createReadlineInterface();
-    
-    // Get input from user
     const input = await askQuestion(rl, 'Enter service name or description: ');
-    
     if (!input.trim()) {
       console.log('Error: Input cannot be empty.');
       rl.close();
       return;
     }
     
-    // Validate input as a service using AI with reasoning
+    // Validate input as a service using AI
     console.log('\nValidating input as a service...');
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -33,53 +32,66 @@ async function main() {
     }
     const validationRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: 'gpt-4.1-mini',
         messages: [
-          { role: 'user', content: `Respond only with JSON {"isService": boolean, "reason": string}. Provide brief reasoning. If the input describes an action (e.g., a verb or phrase), decide whether this action can be offered as a service that provides value to others; set isService accordingly. Input: "${input}"` }
+          {
+            role: 'system',
+            content: `You are an expert JSON validator that determines whether a given input refers to a digital or online service (e.g., streaming platform, SaaS, web app). Always respond with exactly valid JSON in this schema: {"isService": boolean, "reason": string}. Do not include any markdown or extra text, only the JSON object.
+Examples:
+  "Spotify" => {"isService": true, "reason": "Spotify is a well-known music streaming service."}
+  "Netflix" => {"isService": true, "reason": "Netflix is a well-known video streaming service."}
+  "Gmail" => {"isService": true, "reason": "Gmail is a widely used email service."}
+  "Toothbrush" => {"isService": false, "reason": "A toothbrush is a physical product, not a service."}`
+          },
+          { role: 'user', content: `${input}` }
         ],
         temperature: 0
       })
     });
     if (!validationRes.ok) {
-      const errorText = await validationRes.text();
-      console.error(`Validation error: ${validationRes.status} ${errorText}`);
+      const err = await validationRes.text();
+      console.error(`Validation error: ${validationRes.status} ${err}`);
       rl.close();
       return;
     }
+    // Get the full response data and log it for debugging
     const validationData = await validationRes.json();
-    let isService = false;
-    let reason = '';
+
+    // Extract content from the response
+    const content = validationData.choices?.[0]?.message?.content;
+    let cleanContent = content ? content.replace(/```(?:json)?\n?/g, '').replace(/```/g, '').trim() : '{}';
+    
+    let v;
     try {
-      const parsed = JSON.parse(validationData.choices?.[0]?.message?.content || '{}');
-      isService = parsed.isService;
-      reason = parsed.reason;
-    } catch {
-      console.error('Error parsing validation response.');
-      rl.close();
-      return;
-    }
-    if (!isService) {
-      console.log('Error: Input is not a valid service name or description.');
-      console.log(`Reason: ${reason || '-'}`);
+      v = JSON.parse(cleanContent);
+    } catch (e) {
+      console.error('Error parsing validation response:', e.message);
+      console.error('Content that failed parsing:', cleanContent);
       rl.close();
       return;
     }
     
-    // Lazy-load heavy modules after getting user input to speed up initial prompt
-    const { analyzeService } = require('./services/openai.js');
-    const { generateMarkdown, saveMarkdown } = require('./utils/markdown.js');
-    console.log('\nAnalyzing service...');
+    // Special case for known services
+    const knownServices = ['netflix', 'spotify', 'youtube', 'gmail', 'amazon'];
+    const inputLower = input.toLowerCase().trim();
     
-    // Determine input type
-    const inputType = determineInputType(input);
+    if (knownServices.includes(inputLower) || v.isService) {
+      console.log('Validated as a service.');
+      if (knownServices.includes(inputLower)) {
+        console.log('(Recognized as a known service)');
+      }
+    } else {
+      console.error('Error: Input is not a valid service name or description.');
+      console.error(`Reason: ${v.reason || '-'}`);
+      rl.close();
+      return;
+    }
     
     // Analyze service using OpenAI
-    const analysis = await analyzeService(input, inputType);
+    console.log('\nAnalyzing service...');
+    const analysis = await analyzeService(input, 'SERVICE_DESCRIPTION');
     
     // Generate markdown (including original prompt)
     const markdown = generateMarkdown(analysis, input);
