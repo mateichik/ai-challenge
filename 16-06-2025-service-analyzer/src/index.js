@@ -23,6 +23,50 @@ async function main() {
       return;
     }
     
+    // Validate input as a service using AI
+    console.log('\nValidating input as a service...');
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.error('Error: OPENAI_API_KEY is missing.');
+      rl.close();
+      return;
+    }
+    const validationRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        messages: [
+          { role: 'user', content: `Respond only with JSON {"isService": boolean}. Is this input a service name or description? Input: "${input}"` }
+        ],
+        temperature: 0
+      })
+    });
+    if (!validationRes.ok) {
+      const errorText = await validationRes.text();
+      console.error(`Validation error: ${validationRes.status} ${errorText}`);
+      rl.close();
+      return;
+    }
+    const validationData = await validationRes.json();
+    let isService = false;
+    try {
+      const parsed = JSON.parse(validationData.choices?.[0]?.message?.content || '{}');
+      isService = parsed.isService;
+    } catch {
+      console.error('Error parsing validation response.');
+      rl.close();
+      return;
+    }
+    if (!isService) {
+      console.log('Error: Input is not a valid service name or description.');
+      rl.close();
+      return;
+    }
+    
     // Lazy-load heavy modules after getting user input to speed up initial prompt
     const { analyzeService } = require('./services/openai.js');
     const { generateMarkdown, saveMarkdown } = require('./utils/markdown.js');
