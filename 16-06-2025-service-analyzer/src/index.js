@@ -1,7 +1,6 @@
-// Remove dotenv; Node.js --env-file flag loads environment variables from .env
+// Thin CLI wrapper
 const { createReadlineInterface, askQuestion } = require('./utils/input.js');
-const { analyzeService } = require('./services/openai.js');
-const { generateMarkdown, saveMarkdown } = require('./utils/markdown.js');
+const { runServiceAnalyzer } = require('./app.js');
 
 /**
  * Main application flow
@@ -92,19 +91,13 @@ If uncertain, default to isService = true and explain why in reason.`
     
     // Analyze service using OpenAI
     console.log('\nAnalyzing service...');
-    const analysis = await analyzeService(input, 'SERVICE_DESCRIPTION');
-    
-    // Generate markdown (including original prompt)
-    const markdown = generateMarkdown(analysis, input);
-    
-    // Save markdown to file
-    const filePath = saveMarkdown(markdown, analysis.serviceName);
+    const filePath = await runServiceAnalyzer(input);
     
     console.log(`\nAnalysis complete! Saved to: ${filePath}`);
     
     rl.close();
   } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error:', error.message);
     process.exit(1);
   }
 }
