@@ -1,4 +1,4 @@
-const { InputType } = require('../types/index.ts');
+// Removed unnecessary type import
 
 /**
  * Analyze a service using OpenAI
@@ -6,10 +6,7 @@ const { InputType } = require('../types/index.ts');
  * @param inputType Type of input (service name or description)
  * @returns ServiceAnalysis object
  */
-async function analyzeService(
-  input: string,
-  inputType: string
-): Promise<any> {
+async function analyzeService(input, inputType) {
   try {
     const systemPrompt = getSystemPrompt(inputType);
     const userPrompt = getUserPrompt(input, inputType);
@@ -55,7 +52,7 @@ async function analyzeService(
 /**
  * Get system prompt based on input type
  */
-function getSystemPrompt(inputType: string): string {
+function getSystemPrompt(inputType) {
   const basePrompt = `You are a service analyzer that extracts and generates insights about services. 
 Your task is to analyze the provided ${inputType === 'SERVICE_NAME' ? 'service name' : 'service description'} and generate a detailed analysis covering:
 
@@ -99,7 +96,7 @@ Apply reasoning to infer information not explicitly stated (e.g., deducing audie
 /**
  * Get user prompt based on input type
  */
-function getUserPrompt(input: string, inputType: string): string {
+function getUserPrompt(input, inputType) {
   if (inputType === 'SERVICE_NAME') {
     return `Please analyze the following service: ${input}`;
   } else {
@@ -110,7 +107,7 @@ function getUserPrompt(input: string, inputType: string): string {
 /**
  * Parse OpenAI API response into ServiceAnalysis object
  */
-function parseOpenAIResponse(responseContent: string, originalInput: string): any {
+function parseOpenAIResponse(responseContent, originalInput) {
   try {
     // Try to parse as JSON
     const parsed = JSON.parse(responseContent);

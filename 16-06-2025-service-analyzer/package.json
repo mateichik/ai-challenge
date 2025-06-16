@@ -2,10 +2,10 @@
   "name": "16-06-2025-service-analyzer",
   "version": "1.0.0",
   "description": "A service analyzer that generates insights using OpenAI API",
-  "main": "src/index.ts",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node --env-file=.env src/index.ts",
-    "dev": "node --env-file=.env src/index.ts"
+    "start": "node --env-file=.env src/index.js",
+    "dev": "node --env-file=.env src/index.js"
   },
   "keywords": ["service", "analysis", "openai"],
   "author": "",

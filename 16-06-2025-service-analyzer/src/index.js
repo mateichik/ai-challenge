@@ -1,5 +1,5 @@
 // Remove dotenv; Node.js --env-file flag loads environment variables from .env
-const { createReadlineInterface, askQuestion, determineInputType } = require('./utils/input.ts');
+const { createReadlineInterface, askQuestion, determineInputType } = require('./utils/input.js');
 
 /**
  * Main application function
@@ -24,8 +24,8 @@ async function main() {
     }
     
     // Lazy-load heavy modules after getting user input to speed up initial prompt
-    const { analyzeService } = require('./services/openai.ts');
-    const { generateMarkdown, saveMarkdown } = require('./utils/markdown.ts');
+    const { analyzeService } = require('./services/openai.js');
+    const { generateMarkdown, saveMarkdown } = require('./utils/markdown.js');
     console.log('\nAnalyzing service...');
     
     // Determine input type
