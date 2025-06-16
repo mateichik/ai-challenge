@@ -1,10 +1,10 @@
-import * as dotenv from 'dotenv';
+const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-import { analyzeService } from './services/openai';
-import { generateMarkdown, saveMarkdown } from './utils/markdown';
-import { createReadlineInterface, askQuestion, determineInputType } from './utils/input';
+const { analyzeService } = require('./services/openai.ts');
+const { generateMarkdown, saveMarkdown } = require('./utils/markdown.ts');
+const { createReadlineInterface, askQuestion, determineInputType } = require('./utils/input.ts');
 
 /**
  * Main application function

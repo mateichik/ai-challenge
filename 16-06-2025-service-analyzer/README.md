@@ -32,10 +32,6 @@ The generated Markdown file includes the following sections:
    ```
    OPENAI_API_KEY=your-api-key-here
    ```
-4. Build the application:
-   ```
-   npm run build
-   ```
 
 ## Usage
 
@@ -57,7 +53,9 @@ You can use:
 - A service name: `Spotify`
 - A service description: `Our platform helps creators monetize content through subscriptions and digital products`
 
-## Requirements
+## Technical Details
 
-- Node.js (v14 or higher)
+This application uses Node.js native typestripping to run TypeScript code directly without compilation. It requires:
+
+- Node.js v23.6.0 or higher (which has typestripping enabled by default)
 - OpenAI API Key 

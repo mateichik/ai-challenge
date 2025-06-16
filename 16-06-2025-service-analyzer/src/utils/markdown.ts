@@ -1,13 +1,12 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { ServiceAnalysis } from '../types';
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Convert a service analysis to markdown format
- * @param analysis The service analysis object
- * @returns Markdown content as a string
+ * @param {Object} analysis The service analysis object
+ * @returns {string} Markdown content as a string
  */
-export function generateMarkdown(analysis: ServiceAnalysis): string {
+function generateMarkdown(analysis) {
   return `# ${analysis.serviceName} - Service Analysis
 
 ## Brief History
@@ -38,11 +37,11 @@ ${analysis.perceivedWeaknesses}
 
 /**
  * Save markdown content to a file
- * @param content Markdown content
- * @param serviceName Service name for file naming
- * @returns Path to the saved file
+ * @param {string} content Markdown content
+ * @param {string} serviceName Service name for file naming
+ * @returns {string} Path to the saved file
  */
-export function saveMarkdown(content: string, serviceName: string): string {
+function saveMarkdown(content, serviceName) {
   // Create output directory if it doesn't exist
   const outputDir = path.join(process.cwd(), 'output');
   if (!fs.existsSync(outputDir)) {
@@ -57,4 +56,9 @@ export function saveMarkdown(content: string, serviceName: string): string {
   fs.writeFileSync(filePath, content);
   
   return filePath;
-} 
+}
+
+module.exports = {
+  generateMarkdown,
+  saveMarkdown
+}; 

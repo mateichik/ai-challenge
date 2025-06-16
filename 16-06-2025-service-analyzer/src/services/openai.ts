@@ -1,5 +1,5 @@
-import { OpenAI } from 'openai';
-import { ServiceAnalysis, InputType } from '../types';
+const { OpenAI } = require('openai');
+const { InputType } = require('../types/index.ts');
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -12,10 +12,10 @@ const openai = new OpenAI({
  * @param inputType Type of input (service name or description)
  * @returns ServiceAnalysis object
  */
-export async function analyzeService(
-  input: string, 
-  inputType: InputType
-): Promise<ServiceAnalysis> {
+async function analyzeService(
+  input, 
+  inputType
+) {
   try {
     const systemPrompt = getSystemPrompt(inputType);
     const userPrompt = getUserPrompt(input, inputType);
@@ -46,7 +46,7 @@ export async function analyzeService(
 /**
  * Get system prompt based on input type
  */
-function getSystemPrompt(inputType: InputType): string {
+function getSystemPrompt(inputType) {
   const basePrompt = `You are a service analyzer that extracts and generates insights about services. 
 Your task is to analyze the provided ${inputType === 'SERVICE_NAME' ? 'service name' : 'service description'} and generate a detailed analysis covering:
 
@@ -90,7 +90,7 @@ Apply reasoning to infer information not explicitly stated (e.g., deducing audie
 /**
  * Get user prompt based on input type
  */
-function getUserPrompt(input: string, inputType: InputType): string {
+function getUserPrompt(input, inputType) {
   if (inputType === 'SERVICE_NAME') {
     return `Please analyze the following service: ${input}`;
   } else {
@@ -101,7 +101,7 @@ function getUserPrompt(input: string, inputType: InputType): string {
 /**
  * Parse OpenAI API response into ServiceAnalysis object
  */
-function parseOpenAIResponse(responseContent: string, originalInput: string): ServiceAnalysis {
+function parseOpenAIResponse(responseContent, originalInput) {
   try {
     // Try to parse as JSON
     const parsed = JSON.parse(responseContent);
@@ -124,7 +124,7 @@ function parseOpenAIResponse(responseContent: string, originalInput: string): Se
       parsed.serviceName = originalInput;
     }
     
-    return parsed as ServiceAnalysis;
+    return parsed;
   } catch (error) {
     console.error('Error parsing OpenAI response:', error);
     
@@ -141,4 +141,6 @@ function parseOpenAIResponse(responseContent: string, originalInput: string): Se
       perceivedWeaknesses: 'Failed to analyze perceived weaknesses.',
     };
   }
-} 
+}
+
+module.exports = { analyzeService }; 
