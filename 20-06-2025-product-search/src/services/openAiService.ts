@@ -23,57 +23,60 @@ export class OpenAIService {
       Logger.info(`Parsing user query: "${userInput}"`);
       
       const response = await this.openai.chat.completions.create({
-        model: "gpt-3.5-turbo-0125", // Function calling supported model
+        model: "gpt-4.1-mini", // Using gpt-4.1-mini model
         messages: [
           { 
             role: "user", 
             content: `Parse the following product search query into structured filter parameters: "${userInput}"` 
           }
         ],
-        functions: [
+        tools: [
           {
-            name: "filter_products",
-            description: "Filter products based on user criteria",
-            parameters: {
-              type: "object",
-              properties: {
-                keywords: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Keywords related to product features or names"
+            type: "function",
+            function: {
+              name: "filter_products",
+              description: "Filter products based on user criteria",
+              parameters: {
+                type: "object",
+                properties: {
+                  keywords: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Keywords related to product features or names"
+                  },
+                  minPrice: {
+                    type: "number",
+                    description: "Minimum price of product"
+                  },
+                  maxPrice: {
+                    type: "number",
+                    description: "Maximum price of product"
+                  },
+                  minRating: {
+                    type: "number",
+                    description: "Minimum rating of product (1-5)"
+                  },
+                  categories: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Product categories to include (Electronics, Fitness, Kitchen, Books, Clothing)"
+                  },
+                  inStock: {
+                    type: "boolean",
+                    description: "Whether the product must be in stock"
+                  }
                 },
-                minPrice: {
-                  type: "number",
-                  description: "Minimum price of product"
-                },
-                maxPrice: {
-                  type: "number",
-                  description: "Maximum price of product"
-                },
-                minRating: {
-                  type: "number",
-                  description: "Minimum rating of product (1-5)"
-                },
-                categories: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Product categories to include (Electronics, Fitness, Kitchen, Books, Clothing)"
-                },
-                inStock: {
-                  type: "boolean",
-                  description: "Whether the product must be in stock"
-                }
-              },
-              required: []
+                required: []
+              }
             }
           }
         ],
-        function_call: { name: "filter_products" }
+        tool_choice: { type: "function", function: { name: "filter_products" } }
       });
 
-      const functionCall = response.choices[0].message.function_call;
-      if (functionCall && functionCall.arguments) {
-        const parsedQuery = JSON.parse(functionCall.arguments) as ProductQuery;
+      const toolCall = response.choices[0].message.tool_calls?.[0];
+      if (toolCall && toolCall.function.name === "filter_products" && toolCall.function.arguments) {
+        const parsedQuery = JSON.parse(toolCall.function.arguments) as ProductQuery;
         Logger.debug(`Parsed query: ${JSON.stringify(parsedQuery)}`);
         return parsedQuery;
       }
