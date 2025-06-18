@@ -26,6 +26,12 @@ export class OpenAIService {
         model: "gpt-4.1-mini", // Using gpt-4.1-mini model
         messages: [
           { 
+            role: "system", 
+            content: `You are a product search assistant that helps parse natural language queries into structured filters.
+            Pay special attention to requests for finding the cheapest/lowest price, most expensive/highest price, 
+            lowest rated, or highest rated products. These should be identified as finding minimum or maximum values.`
+          },
+          { 
             role: "user", 
             content: `Parse the following product search query into structured filter parameters: "${userInput}"` 
           }
@@ -56,6 +62,10 @@ export class OpenAIService {
                     type: "number",
                     description: "Minimum rating of product (1-5)"
                   },
+                  maxRating: {
+                    type: "number",
+                    description: "Maximum rating of product (1-5)"
+                  },
                   categories: {
                     type: "array",
                     items: { type: "string" },
@@ -64,6 +74,22 @@ export class OpenAIService {
                   inStock: {
                     type: "boolean",
                     description: "Whether the product must be in stock"
+                  },
+                  findMinPrice: {
+                    type: "boolean",
+                    description: "Whether to find the product(s) with the lowest price (cheapest)"
+                  },
+                  findMaxPrice: {
+                    type: "boolean",
+                    description: "Whether to find the product(s) with the highest price (most expensive)"
+                  },
+                  findMinRating: {
+                    type: "boolean",
+                    description: "Whether to find the product(s) with the lowest rating"
+                  },
+                  findMaxRating: {
+                    type: "boolean",
+                    description: "Whether to find the product(s) with the highest rating (best rated)"
                   }
                 },
                 required: []
