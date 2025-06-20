@@ -29,7 +29,7 @@ program
       console.log('✅ Transcription complete');
       
       // Save transcription to file
-      const transcriptionFile = saveTranscription(transcription);
+      const transcriptionFile = saveTranscription(transcription, resolvedPath);
       console.log(`Transcription saved to: ${transcriptionFile}`);
       
       // Step 2: Generate summary
@@ -38,7 +38,7 @@ program
       console.log('✅ Summary generated');
       
       // Save summary to file
-      const summaryFile = saveSummary(summary);
+      const summaryFile = saveSummary(summary, resolvedPath);
       console.log(`Summary saved to: ${summaryFile}`);
       
       // Step 3: Generate analytics
@@ -47,7 +47,7 @@ program
       console.log('✅ Analysis complete');
       
       // Save analytics to file
-      const analyticsFile = saveAnalytics(analytics);
+      const analyticsFile = saveAnalytics(analytics, resolvedPath);
       console.log(`Analytics saved to: ${analyticsFile}`);
       
       // Step 4: Display results in console

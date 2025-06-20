@@ -3,41 +3,55 @@ const path = require('path');
 const logger = require('./logger');
 const config = require('../config/config');
 
-// Ensure output directory exists
-const ensureOutputDir = () => {
+// Get subfolder name from audio file path (without extension)
+const getSubfolderName = (audioFilePath) => {
+  return path.basename(audioFilePath, path.extname(audioFilePath));
+};
+
+// Ensure output directory exists with audio-specific subfolder
+const ensureOutputDir = (audioFilePath) => {
+  const subfolder = getSubfolderName(audioFilePath);
+  const outputDir = path.join(config.outputDirectory, subfolder);
+  
   if (!fs.existsSync(config.outputDirectory)) {
     fs.mkdirSync(config.outputDirectory, { recursive: true });
   }
+  
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  
+  return outputDir;
 };
 
-// Generate unique filename with timestamp
+// Generate filename with timestamp
 const generateFilename = (prefix) => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   return `${prefix}-${timestamp}`;
 };
 
 // Save transcription to file
-const saveTranscription = (transcription) => {
-  ensureOutputDir();
-  const filename = path.join(config.outputDirectory, `${generateFilename('transcription')}.md`);
+const saveTranscription = (transcription, audioFilePath) => {
+  const outputDir = ensureOutputDir(audioFilePath);
+  const filename = path.join(outputDir, `transcription.md`);
   fs.writeFileSync(filename, transcription);
   logger.info(`Transcription saved to ${filename}`);
   return filename;
 };
 
 // Save summary to file
-const saveSummary = (summary) => {
-  ensureOutputDir();
-  const filename = path.join(config.outputDirectory, `${generateFilename('summary')}.md`);
+const saveSummary = (summary, audioFilePath) => {
+  const outputDir = ensureOutputDir(audioFilePath);
+  const filename = path.join(outputDir, `summary.md`);
   fs.writeFileSync(filename, summary);
   logger.info(`Summary saved to ${filename}`);
   return filename;
 };
 
 // Save analytics to JSON file
-const saveAnalytics = (analytics) => {
-  ensureOutputDir();
-  const filename = path.join(config.outputDirectory, `${generateFilename('analysis')}.json`);
+const saveAnalytics = (analytics, audioFilePath) => {
+  const outputDir = ensureOutputDir(audioFilePath);
+  const filename = path.join(outputDir, `analysis.json`);
   fs.writeFileSync(filename, JSON.stringify(analytics, null, 2));
   logger.info(`Analytics saved to ${filename}`);
   return filename;
