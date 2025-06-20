@@ -24,6 +24,7 @@ export class OpenAIService {
       
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-mini", // Using gpt-4.1-mini model
+        temperature: 0,
         messages: [
           { 
             role: "system", 
