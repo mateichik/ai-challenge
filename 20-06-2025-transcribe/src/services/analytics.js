@@ -36,7 +36,7 @@ const extractTopics = async (transcription) => {
           content: `Please analyze this transcript and return only a JSON array of the top topics:\n\n${transcription}`
         }
       ],
-      temperature: 0.2,
+      temperature: 0,
       response_format: { type: "json_object" }
     });
     

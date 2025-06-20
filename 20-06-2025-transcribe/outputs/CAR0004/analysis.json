@@ -4,7 +4,7 @@
   "frequently_mentioned_topics": [
     {
       "topic": "chest pain",
-      "mentions": 15
+      "mentions": 18
     },
     {
       "topic": "heart attack",
@@ -19,27 +19,23 @@
       "mentions": 5
     },
     {
+      "topic": "pain characteristics",
+      "mentions": 5
+    },
+    {
       "topic": "family history",
       "mentions": 3
     },
     {
-      "topic": "pain characteristics",
-      "mentions": 6
-    },
-    {
-      "topic": "diagnostic tests (ECG, blood work)",
+      "topic": "diagnostic tests",
       "mentions": 3
     },
     {
-      "topic": "medications (Tylenol)",
+      "topic": "medications",
       "mentions": 3
     },
     {
-      "topic": "patient background (age, occupation, living situation)",
-      "mentions": 4
-    },
-    {
-      "topic": "lifestyle factors (alcohol, smoking, drugs)",
+      "topic": "patient background",
       "mentions": 3
     }
   ]
