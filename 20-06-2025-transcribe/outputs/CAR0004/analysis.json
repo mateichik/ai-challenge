@@ -1,0 +1,46 @@
+{
+  "word_count": 981,
+  "speaking_speed_wpm": 491,
+  "frequently_mentioned_topics": [
+    {
+      "topic": "chest pain",
+      "mentions": 15
+    },
+    {
+      "topic": "heart attack",
+      "mentions": 7
+    },
+    {
+      "topic": "symptoms",
+      "mentions": 7
+    },
+    {
+      "topic": "medical history",
+      "mentions": 5
+    },
+    {
+      "topic": "family history",
+      "mentions": 3
+    },
+    {
+      "topic": "pain characteristics",
+      "mentions": 6
+    },
+    {
+      "topic": "diagnostic tests (ECG, blood work)",
+      "mentions": 3
+    },
+    {
+      "topic": "medications (Tylenol)",
+      "mentions": 3
+    },
+    {
+      "topic": "patient background (age, occupation, living situation)",
+      "mentions": 4
+    },
+    {
+      "topic": "lifestyle factors (alcohol, smoking, drugs)",
+      "mentions": 3
+    }
+  ]
+}
