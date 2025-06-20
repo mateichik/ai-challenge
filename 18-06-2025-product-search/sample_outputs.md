@@ -108,3 +108,31 @@ Found 2 matching products:
 
 Matching explanation: The products filtered contain the keyword 'read' in the context of products that are related to reading or guides for reading. Specifically, 'Programming Guide' and 'Self-Help Guide' match the keyword as they are types of reading materials.
 ```
+
+---
+```
+Search (or 'exit' to quit): show me a fitness product with a lowest rating
+
+Processing your query...
+[INFO] Parsing user query: "show me a fitness product with a lowest rating"
+Understood your query as: {
+  "categories": [
+    "Fitness"
+  ],
+  "findMinRating": true
+}
+[INFO] Loading products from /home/anton/ai-challenge/18-06-2025-product-search/products.json
+[INFO] Loaded 50 products
+[INFO] Filtering products using OpenAI
+[INFO] Found 1 products matching the criteria
+
+Found 1 matching products:
+
+1. Jump Rope
+   Category: Fitness
+   Price: $9.99
+   Rating: 4/5
+   In Stock: Yes
+
+Matching explanation: First, I filtered the products to include only those in the 'Fitness' category. This resulted in a subset of products all belonging to 'Fitness'. Then, since the criteria specified 'findMinRating' as true, I identified the product(s) with the lowest rating among this filtered subset. The product 'Jump Rope' has the lowest rating of 4.0 among all 'Fitness' products, so it is the only product returned.
+```
