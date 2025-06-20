@@ -1,0 +1,35 @@
+{
+  "name": "audio-transcription-tool",
+  "version": "1.0.0",
+  "description": "A tool that transcribes audio, summarizes content, and extracts insights using OpenAI's Whisper and GPT models",
+  "main": "src/index.js",
+  "bin": {
+    "transcribe": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "keywords": [
+    "transcription",
+    "summarization",
+    "openai",
+    "whisper",
+    "gpt"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "commander": "^14.0.0",
+    "dotenv": "^16.5.0",
+    "fs": "^0.0.1-security",
+    "openai": "^5.5.1",
+    "path": "^0.12.7",
+    "winston": "^3.17.0"
+  }
+}
