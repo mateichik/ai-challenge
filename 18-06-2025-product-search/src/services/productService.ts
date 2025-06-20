@@ -43,18 +43,46 @@ export class ProductService {
         messages: [
           { 
             role: "system", 
-            content: "You are a product filtering assistant. Filter products based on the provided criteria." 
+            content: `You are a precise product filtering assistant that strictly follows filtering criteria.
+
+TASK:
+- Filter products based on the exact criteria provided in the query object.
+- Return ONLY products that match ALL specified criteria.
+
+FILTERING RULES:
+- keywords: Return products where any keyword appears in the product name (case-insensitive).
+- minPrice/maxPrice: Filter products within the specified price range (inclusive).
+- minRating/maxRating: Filter products within the specified rating range (inclusive).
+- categories: Include only products from the specified categories.
+- inStock: If true, include only in-stock products.
+- findMinPrice: If true, return ONLY product(s) with the lowest price among all matches.
+- findMaxPrice: If true, return ONLY product(s) with the highest price among all matches.
+- findMinRating: If true, return ONLY product(s) with the lowest rating among all matches.
+- findMaxRating: If true, return ONLY product(s) with the highest rating among all matches.
+
+IMPORTANT:
+- Apply filters in sequence, narrowing results at each step.
+- If no products match ALL criteria, return an empty array.
+- Provide a clear, concise explanation of how the filtering was performed.
+- For min/max queries, explain why these specific products have the minimum/maximum values.` 
           },
           { 
             role: "user", 
-            content: `Filter the following products based on these criteria: ${JSON.stringify(query)}. 
-                      Products data: ${JSON.stringify(products)}` 
+            content: `FILTERING TASK:
+1. Filter the products based on these exact criteria: ${JSON.stringify(query)}
+2. Apply all criteria as strict filters
+3. For min/max price or rating queries, first apply all other filters, then find the min/max among remaining products
+
+PRODUCTS DATA:
+${JSON.stringify(products)}
+
+Return the filtered products and a clear explanation of how you applied the filters.` 
           }
         ],
         functions: [
           {
             name: "return_filtered_products",
-            description: "Return products that match the filtering criteria",
+            description: "Return products that exactly match the filtering criteria",
             parameters: {
               type: "object",
               properties: {
@@ -70,14 +98,14 @@ export class ProductService {
                       in_stock: { type: "boolean" }
                     }
                   },
-                  description: "Array of products that match the criteria"
+                  description: "Array of products that match ALL specified criteria"
                 },
                 explanation: {
                   type: "string",
-                  description: "Explanation of why these products match the criteria"
+                  description: "Clear explanation of how filters were applied and why these products match the criteria"
                 }
               },
-              required: ["products"]
+              required: ["products", "explanation"]
             }
           }
         ],
